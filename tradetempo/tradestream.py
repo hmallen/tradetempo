@@ -26,6 +26,8 @@ config.read('settings.cfg')
 db = MongoClient(config['mongodb']['host'])[config['mongodb']['db']]
 trades = db[config['mongodb']['collection']]
 
+sub_count = int(config['cryptowatch']['subscription_count'])
+
 config = configparser.RawConfigParser()
 config.read('.credentials.cfg')
 
@@ -56,7 +58,7 @@ class MarketInfo:
 # What to do with each trade update
 def handle_trades_update(trade_update):
     trade_json = json.loads(MessageToJson(trade_update))
-    print(trade_json)
+    # print(trade_json)
 
     for trade in trade_json['marketUpdate']['tradesUpdate']['trades']:
         trade_formatted = {
@@ -70,6 +72,7 @@ def handle_trades_update(trade_update):
         insert_result = trades.insert_one(trade_formatted)
         logging.debug(
             f"insert_result.inserted_id: {insert_result.inserted_id}")
+        print(f"{trade_formatted['externalId']} - {trade_formatted['orderSide'].rstrip('SIDE')} - {trade_formatted['amount']} @ {trade_formatted['price']}")
 
 
 # What to do with each candle update
@@ -115,7 +118,7 @@ if __name__ == '__main__':
 
     logger.info('Getting top markets.')
     market_info = MarketInfo()
-    top_markets = market_info.get_top_markets(['btc', 'eth'], count=10)
+    top_markets = market_info.get_top_markets(['btc', 'eth'], count=sub_count)
 
     logger.info('Building subscription list.')
     subscription_list = []
@@ -137,7 +140,7 @@ if __name__ == '__main__':
     print(f"Other Markets: {other_markets}")
 
     cw.stream.subscriptions = subscription_list
-    time.sleep(5)
+    # time.sleep(5)
 
     logger.info('Connecting to stream.')
     # Start receiving

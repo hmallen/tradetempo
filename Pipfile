@@ -4,9 +4,13 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-autopep8 = "*"
+pymongo = "*"
+protobuf = "==3.20.1"
+cryptowatch-sdk = {git = "https://github.com/cryptowatch/cw-sdk-python"}
+dydx-v3-python = "*"
 
 [dev-packages]
+autopep8 = "*"
 
 [requires]
-python_version = "3.10"
+python_version = "3.9"
