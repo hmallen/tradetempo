@@ -14,8 +14,9 @@ from google.protobuf.json_format import MessageToJson
 from pymongo import MongoClient
 
 # logging.basicConfig()
-logging.basicConfig(format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
-logging.getLogger("cryptowatch").setLevel(logging.DEBUG)
+logging.basicConfig(
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+logging.getLogger("cryptowatch").setLevel(logging.INFO)
 # logger = logging.getLogger('__main__')
 # logger.setLevel(logging.DEBUG)
 
@@ -51,28 +52,46 @@ class MarketInfo:
             asset_info = result.json()['result']['rows']
         else:
             asset_info = f"Status Code: {result.status_code}"
-        
+
         return asset_info
 
 
 # What to do with each trade update
 def handle_trades_update(trade_update):
     trade_json = json.loads(MessageToJson(trade_update))
-    # print(trade_json)
+
+    received_timestamp = time.time_ns()
+    # currencyPairId = trade_json['marketUpdate']['market']['currencyPairId']
+    # exchangeId = trade_json['marketUpdate']['market']['exchangeId']
+    id = trade_json['marketUpdate']['market']['marketId']
+    exchange = sub_reference[id]['exchange']
+    market = sub_reference[id]['market']
 
     for trade in trade_json['marketUpdate']['tradesUpdate']['trades']:
         trade_formatted = {
+            "received_timestamp": received_timestamp,
+            # "currencyPairId": currencyPairId,
+            # "exchangeId": exchangeId,
+            # "marketId": marketId,
+            "id": id,
+            "exchange": exchange,
+            "market": market,
             "timestamp": datetime.datetime.fromtimestamp(int(trade['timestamp'])),
             "price": Decimal128(trade['priceStr']),
             "amount": Decimal128(trade['amountStr']),
             "timestampNano": Int64(trade['timestampNano']),
-            "externalId": trade['externalId'],
-            "orderSide": trade['orderSide']
+            # "externalId": trade['externalId'],
+            "orderSide": trade['orderSide'].rstrip('SIDE')
         }
+
         insert_result = trades.insert_one(trade_formatted)
+
         logging.debug(
             f"insert_result.inserted_id: {insert_result.inserted_id}")
-        print(f"{trade_formatted['externalId']} - {trade_formatted['orderSide'].rstrip('SIDE')} - {trade_formatted['amount']} @ {trade_formatted['price']}")
+        # print(
+        #     f"{trade_formatted['externalId']} - {trade_formatted['orderSide'].rstrip('SIDE')} - {trade_formatted['amount']} @ {trade_formatted['price']}")
+
+        pprint(trade_formatted)
 
 
 # What to do with each candle update
@@ -102,11 +121,14 @@ def handle_orderbook_delta_updates(orderbook_delta_update):
 # cw.stream.subscriptions = ["markets:*:trades"]
 # cw.stream.subscriptions = ["markets:579:trades"]
 
+
 cw.stream.on_orderbook_delta_update = handle_orderbook_delta_updates
 cw.stream.on_orderbook_spread_update = handle_orderbook_spread_updates
 cw.stream.on_orderbook_snapshot_update = handle_orderbook_snapshot_updates
 cw.stream.on_intervals_update = handle_intervals_update
 cw.stream.on_trades_update = handle_trades_update
+
+sub_reference = {}
 
 
 if __name__ == '__main__':
@@ -119,25 +141,36 @@ if __name__ == '__main__':
     logger.info('Getting top markets.')
     market_info = MarketInfo()
     top_markets = market_info.get_top_markets(['btc', 'eth'], count=sub_count)
+    # [pprint(mkt) for mkt in top_markets]
+    # sys.exit()
 
     logger.info('Building subscription list.')
     subscription_list = []
-    btc_markets = 0
-    eth_markets = 0
-    other_markets = 0
-    print('MARKETS:')
+    btc_market_count = 0
+    eth_market_count = 0
+    other_market_count = 0
+
+    print('\n--- MARKETS ---\n')
     for market in top_markets:
         if market['baseObj']['symbol'] == 'btc':
-            btc_markets += 1
+            btc_market_count += 1
         elif market['baseObj']['symbol'] == 'eth':
-            eth_markets += 1
+            eth_market_count += 1
         else:
-            other_markets += 1
+            other_market_count += 1
         print(market['symbol'])
         subscription_list.append(f"markets:{market['id']}:trades")
-    print(f"BTC Markets:   {btc_markets}")
-    print(f"ETH Markets:   {eth_markets}")
-    print(f"Other Markets: {other_markets}")
+        sub_reference[str(market['id'])] = {
+            'exchange': market['exchangeObj']['name'],
+            # 'market': market['externalTicker'],
+            'market': market['instrumentObj']['v3_slug']
+        }
+    # pprint(sub_reference)
+    # sys.exit()
+
+    print(f"BTC Markets:   {btc_market_count}")
+    print(f"ETH Markets:   {eth_market_count}")
+    print(f"Other Markets: {other_market_count}")
 
     cw.stream.subscriptions = subscription_list
     # time.sleep(5)
@@ -158,4 +191,6 @@ if __name__ == '__main__':
 
         except Exception as e:
             logger.exception(e)
-            time.sleep(1)
+            time.sleep(5)
+            logger.info('Reconnecting to stream.')
+            cw.stream.connect()
