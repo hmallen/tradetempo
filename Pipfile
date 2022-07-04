@@ -6,8 +6,8 @@ name = "pypi"
 [packages]
 pymongo = "*"
 protobuf = "==3.20.1"
-cryptowatch-sdk = {git = "https://github.com/cryptowatch/cw-sdk-python"}
 dydx-v3-python = "*"
+cryptowatch-sdk = {git = "https://github.com/cryptowatch/cw-sdk-python"}
 
 [dev-packages]
 autopep8 = "*"

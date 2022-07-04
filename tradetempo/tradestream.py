@@ -1,4 +1,5 @@
 import configparser
+from re import sub
 from bson import Int64
 import cryptowatch as cw
 import datetime
@@ -13,12 +14,9 @@ from pprint import pprint
 from google.protobuf.json_format import MessageToJson
 from pymongo import MongoClient
 
-# logging.basicConfig()
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 logging.getLogger("cryptowatch").setLevel(logging.INFO)
-# logger = logging.getLogger('__main__')
-# logger.setLevel(logging.DEBUG)
 
 config = configparser.RawConfigParser()
 
@@ -35,6 +33,13 @@ config.read('.credentials.cfg')
 # Set your API Key
 cw.api_key = config['cryptowatch']['api_key']
 
+max_len = {
+    'exchange': 0,
+    'amount': 0,
+    'base': 0,
+    'price': 0,
+    'quote': 0
+}
 
 class MarketInfo:
     def __init__(self):
@@ -61,18 +66,15 @@ def handle_trades_update(trade_update):
     trade_json = json.loads(MessageToJson(trade_update))
 
     received_timestamp = time.time_ns()
-    # currencyPairId = trade_json['marketUpdate']['market']['currencyPairId']
-    # exchangeId = trade_json['marketUpdate']['market']['exchangeId']
     id = trade_json['marketUpdate']['market']['marketId']
     exchange = sub_reference[id]['exchange']
     market = sub_reference[id]['market']
+    base_currency = sub_reference[id]['base']
+    quote_currency = sub_reference[id]['quote']
 
     for trade in trade_json['marketUpdate']['tradesUpdate']['trades']:
         trade_formatted = {
             "received_timestamp": received_timestamp,
-            # "currencyPairId": currencyPairId,
-            # "exchangeId": exchangeId,
-            # "marketId": marketId,
             "id": id,
             "exchange": exchange,
             "market": market,
@@ -90,8 +92,10 @@ def handle_trades_update(trade_update):
             f"insert_result.inserted_id: {insert_result.inserted_id}")
         # print(
         #     f"{trade_formatted['externalId']} - {trade_formatted['orderSide'].rstrip('SIDE')} - {trade_formatted['amount']} @ {trade_formatted['price']}")
-
-        pprint(trade_formatted)
+        print(
+            f"{{{:<{max_len['exchange']}}.format(trade_formatted['exchange'])}} - {trade_formatted['orderSide']} {trade_formatted['amount']} {base_currency.upper()} @ {trade_formatted['price']} {quote_currency.upper()}"
+        )
+        # pprint(trade_formatted)
 
 
 # What to do with each candle update
@@ -162,10 +166,21 @@ if __name__ == '__main__':
         subscription_list.append(f"markets:{market['id']}:trades")
         sub_reference[str(market['id'])] = {
             'exchange': market['exchangeObj']['name'],
-            # 'market': market['externalTicker'],
-            'market': market['instrumentObj']['v3_slug']
+            'market': market['instrumentObj']['v3_slug'],
+            'base': market['instrumentObj']['base'],
+            'quote': market['instrumentObj']['quote']
         }
-    # pprint(sub_reference)
+        if len(sub_reference[str(market['id'])]['exchange']) > max_len['exchange']:
+            max_len['exchange'] = len(sub_reference[str(market['id'])]['exchange'])
+        if len(str(max(market['liquidity']['ask'], market['liquidity']['bid']))) > max_len['amount']:
+            max_len['amount'] = len(str(max(market['liquidity']['ask'], market['liquidity']['bid'])))
+        if len(sub_reference[str(market['id'])]['base']) > max_len['base']:
+            max_len['base'] = len(sub_reference[str(market['id'])]['base'])
+        if len(str(market['summary']['price']['high'])) > max_len['price']:
+            max_len['price'] = len(str(market['summary']['price']['high']))
+        if len(sub_reference[str(market['id'])]['quote']) > max_len['quote']:
+            max_len['quote'] = len(sub_reference[str(market['id'])]['quote'])
+    pprint(max_len)
     # sys.exit()
 
     print(f"BTC Markets:   {btc_market_count}")
