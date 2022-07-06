@@ -41,6 +41,7 @@ max_len = {
     'quote': 0
 }
 
+
 class MarketInfo:
     def __init__(self):
         pass
@@ -90,12 +91,15 @@ def handle_trades_update(trade_update):
 
         logging.debug(
             f"insert_result.inserted_id: {insert_result.inserted_id}")
-        # print(
+        # print(gi
         #     f"{trade_formatted['externalId']} - {trade_formatted['orderSide'].rstrip('SIDE')} - {trade_formatted['amount']} @ {trade_formatted['price']}")
-        print(
-            f"{{{:<{max_len['exchange']}}.format(trade_formatted['exchange'])}} - {trade_formatted['orderSide']} {trade_formatted['amount']} {base_currency.upper()} @ {trade_formatted['price']} {quote_currency.upper()}"
-        )
+        # print(
+        #     f"{{{:<{max_len['exchange']}}.format(trade_formatted['exchange'])}} - {trade_formatted['orderSide']} {trade_formatted['amount']} {base_currency.upper()} @ {trade_formatted['price']} {quote_currency.upper()}"
+        # )
         # pprint(trade_formatted)
+        print(
+            f"{trade_formatted['exchange']} - {trade_formatted['orderSide']} {trade_formatted['amount']} {base_currency.upper()} @ {trade_formatted['price']} {quote_currency.upper()}"
+        )
 
 
 # What to do with each candle update
@@ -171,9 +175,11 @@ if __name__ == '__main__':
             'quote': market['instrumentObj']['quote']
         }
         if len(sub_reference[str(market['id'])]['exchange']) > max_len['exchange']:
-            max_len['exchange'] = len(sub_reference[str(market['id'])]['exchange'])
+            max_len['exchange'] = len(
+                sub_reference[str(market['id'])]['exchange'])
         if len(str(max(market['liquidity']['ask'], market['liquidity']['bid']))) > max_len['amount']:
-            max_len['amount'] = len(str(max(market['liquidity']['ask'], market['liquidity']['bid'])))
+            max_len['amount'] = len(
+                str(max(market['liquidity']['ask'], market['liquidity']['bid'])))
         if len(sub_reference[str(market['id'])]['base']) > max_len['base']:
             max_len['base'] = len(sub_reference[str(market['id'])]['base'])
         if len(str(market['summary']['price']['high'])) > max_len['price']:
