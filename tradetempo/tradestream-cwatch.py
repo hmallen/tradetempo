@@ -1,5 +1,4 @@
 import configparser
-from re import sub
 from bson import Int64
 import cryptowatch as cw
 import datetime
@@ -17,6 +16,9 @@ from tradetempo.tickertape import TickerTape
 logger = logging.getLogger()
 
 config = configparser.RawConfigParser()
+config.read('.credentials.cfg')
+cw.api_key = config['cryptowatch']['api_key']
+
 config.read('settings.cfg')
 
 # cw.stream.subscriptions = ["markets:*:trades", "markets:*:ohlc"]
