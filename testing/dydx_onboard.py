@@ -9,15 +9,25 @@ from dydx3.constants import NETWORK_ID_ROPSTEN
 from web3 import Web3
 
 # Ganache test address.
-ETHEREUM_ADDRESS = '0x22d491Bde2303f2f43325b2108D26f1eAbA1e32b'
+# ETHEREUM_ADDRESS = '0x22d491Bde2303f2f43325b2108D26f1eAbA1e32b'
+ETHEREUM_ADDRESS = '0xea598540A5f16fEa962cCf16D6c6a5b3A2a08E28'
 
 # Ganache node.
-WEB_PROVIDER_URL = 'http://localhost:8545'
+WEB_PROVIDER_URL = 'http://127.0.0.1:8545'
 
-client = Client(
+NETWORK_ID = 3
+
+"""client = Client(
     network_id=NETWORK_ID_ROPSTEN,
     host=API_HOST_ROPSTEN,
     default_ethereum_address=ETHEREUM_ADDRESS,
+    web3=Web3(Web3.HTTPProvider(WEB_PROVIDER_URL)),
+)"""
+
+client = Client(
+    network_id=NETWORK_ID,
+    host=API_HOST_ROPSTEN,
+    default_ethereum_address='0x48f5Bed6a6425602EF1bAd9c26835746D45f869a',
     web3=Web3(Web3.HTTPProvider(WEB_PROVIDER_URL)),
 )
 
