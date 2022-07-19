@@ -18,6 +18,12 @@ logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 logging.getLogger("cryptowatch").setLevel(logging.INFO)
 
+logger = logging.getLogger('__main__')
+# logger.setLevel(logging.DEBUG)
+stream_handler = logging.StreamHandler()
+stream_handler.setLevel(logging.DEBUG)
+logger.addHandler(stream_handler)
+
 config = configparser.RawConfigParser()
 
 config.read('settings.cfg')
@@ -38,7 +44,8 @@ max_len = {
     'amount': 0,
     'base': 0,
     'price': 0,
-    'quote': 0
+    'quote': 0,
+    'side': 4
 }
 
 
@@ -83,23 +90,17 @@ def handle_trades_update(trade_update):
             "price": Decimal128(trade['priceStr']),
             "amount": Decimal128(trade['amountStr']),
             "timestampNano": Int64(trade['timestampNano']),
-            # "externalId": trade['externalId'],
-            "orderSide": trade['orderSide'].rstrip('SIDE')
+            "orderSide": trade['orderSide'].rstrip('SIDE'),
+            "baseCurrency": base_currency,
+            "quoteCurrency": quote_currency
         }
 
         insert_result = trades.insert_one(trade_formatted)
 
         logging.debug(
             f"insert_result.inserted_id: {insert_result.inserted_id}")
-        # print(gi
-        #     f"{trade_formatted['externalId']} - {trade_formatted['orderSide'].rstrip('SIDE')} - {trade_formatted['amount']} @ {trade_formatted['price']}")
-        # print(
-        #     f"{{{:<{max_len['exchange']}}.format(trade_formatted['exchange'])}} - {trade_formatted['orderSide']} {trade_formatted['amount']} {base_currency.upper()} @ {trade_formatted['price']} {quote_currency.upper()}"
-        # )
-        # pprint(trade_formatted)
-        print(
-            f"{trade_formatted['exchange']} - {trade_formatted['orderSide']} {trade_formatted['amount']} {base_currency.upper()} @ {trade_formatted['price']} {quote_currency.upper()}"
-        )
+
+        print(f"{trade_formatted['orderSide']:{max_len['side']}} | {base_currency.upper():{max_len['base']}} | {str(trade_formatted['amount']):{max_len['amount']}} @ {str(trade_formatted['price']):{max_len['price']}} {quote_currency.upper():{max_len['quote']}} | {exchange:{max_len['exchange']}} | {market}")
 
 
 # What to do with each candle update
@@ -140,17 +141,9 @@ sub_reference = {}
 
 
 if __name__ == '__main__':
-    logger = logging.getLogger('__main__')
-    # logger.setLevel(logging.DEBUG)
-    stream_handler = logging.StreamHandler()
-    stream_handler.setLevel(logging.DEBUG)
-    logger.addHandler(stream_handler)
-
     logger.info('Getting top markets.')
     market_info = MarketInfo()
     top_markets = market_info.get_top_markets(['btc', 'eth'], count=sub_count)
-    # [pprint(mkt) for mkt in top_markets]
-    # sys.exit()
 
     logger.info('Building subscription list.')
     subscription_list = []
@@ -186,8 +179,7 @@ if __name__ == '__main__':
             max_len['price'] = len(str(market['summary']['price']['high']))
         if len(sub_reference[str(market['id'])]['quote']) > max_len['quote']:
             max_len['quote'] = len(sub_reference[str(market['id'])]['quote'])
-    pprint(max_len)
-    # sys.exit()
+    logger.debug(f"{max_len = }")
 
     print(f"BTC Markets:   {btc_market_count}")
     print(f"ETH Markets:   {eth_market_count}")
@@ -200,6 +192,7 @@ if __name__ == '__main__':
     # Start receiving
     cw.stream.connect()
 
+    exception_count = 0
     while True:
         try:
             time.sleep(0.1)
@@ -208,10 +201,18 @@ if __name__ == '__main__':
             logger.info('Exit signal received.')
             # Stop receiving
             cw.stream.disconnect()
+            logger.info('Disconnected from stream.')
             break
 
         except Exception as e:
+            exception_count += 1
             logger.exception(e)
+            with open('errors.log', 'a') as error_file:
+                error_file.write(
+                    f"{datetime.datetime.now().strftime('%md-%dd-%YY %HH%MM%SS')} - Exception - {e}")
             time.sleep(5)
-            logger.info('Reconnecting to stream.')
             cw.stream.connect()
+            logger.info('Reconnected to stream.')
+
+    logger.info(f"Exception Count: {exception_count}")
+    logger.info('Exiting.')
