@@ -16,7 +16,7 @@ from pymongo import MongoClient
 
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
-logging.getLogger("cryptowatch").setLevel(logging.INFO)
+# logging.getLogger("cryptowatch").setLevel(logging.DEBUG)
 
 logger = logging.getLogger('__main__')
 # logger.setLevel(logging.DEBUG)
@@ -190,7 +190,7 @@ if __name__ == '__main__':
 
     logger.info('Connecting to stream.')
     # Start receiving
-    cw.stream.connect()
+    cw.stream.connect(enable_trace=True)
 
     exception_count = 0
     while True:
