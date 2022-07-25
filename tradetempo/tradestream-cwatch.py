@@ -11,15 +11,19 @@ import sys
 from google.protobuf.json_format import MessageToJson
 from pymongo import MongoClient
 
-from tradetempo.tickertape import TickerTape
+from tickertape import TickerTape
+from cwatchhelper import MarketInfo
 
-logger = logging.getLogger()
+logger = logging.getLogger("cryptowatch")
 
 config = configparser.RawConfigParser()
 config.read('.credentials.cfg')
 cw.api_key = config['cryptowatch']['api_key']
 
 config.read('settings.cfg')
+
+db = MongoClient(config['mongodb']['host'])[config['mongodb']['db']]
+trades = db[config['mongodb']['collection']]
 
 # cw.stream.subscriptions = ["markets:*:trades", "markets:*:ohlc"]
 # cw.stream.subscriptions = ["assets:60:book:snapshots"]
@@ -29,34 +33,92 @@ config.read('settings.cfg')
 # cw.stream.subscriptions = ["markets:*:trades"]
 # cw.stream.subscriptions = ["markets:579:trades"]
 
+# What to do with each trade update
 
-class CryptowatchStream:
 
-    def __init__(self, top_markets):
-        db = MongoClient(config['mongodb']['host'])[config['mongodb']['db']]
-        self.trades = db[config['mongodb']['collection']]
+def handle_trades_update(trade_update):
+    trade_json = json.loads(MessageToJson(trade_update))
 
-        cw.stream.on_orderbook_delta_update = CryptowatchStream.handle_orderbook_delta_updates
-        cw.stream.on_orderbook_spread_update = CryptowatchStream.handle_orderbook_spread_updates
-        cw.stream.on_orderbook_snapshot_update = CryptowatchStream.handle_orderbook_snapshot_updates
-        cw.stream.on_intervals_update = CryptowatchStream.handle_intervals_update
-        cw.stream.on_trades_update = CryptowatchStream.handle_trades_update
+    received_timestamp = time.time_ns()
+    id = trade_json['marketUpdate']['market']['marketId']
+    exchange = sub_reference[id]['exchange']
+    market = sub_reference[id]['market']
+    base_currency = sub_reference[id]['base']
+    quote_currency = sub_reference[id]['quote']
 
-        sub_reference = {}
-        subscription_list = []
-        max_len = {
-            'exchange': 0,
-            'amount': 0,
-            'base': 0,
-            'price': 0,
-            'quote': 0,
-            'side': 4
+    for trade in trade_json['marketUpdate']['tradesUpdate']['trades']:
+        trade_formatted = {
+            "received_timestamp": received_timestamp,
+            "id": id,
+            "exchange": exchange,
+            "market": market,
+            "timestamp": datetime.datetime.fromtimestamp(int(trade['timestamp'])),
+            "price": Decimal128(trade['priceStr']),
+            "amount": Decimal128(trade['amountStr']),
+            "timestampNano": Int64(trade['timestampNano']),
+            "orderSide": trade['orderSide'].rstrip('SIDE'),
+            "baseCurrency": base_currency,
+            "quoteCurrency": quote_currency
         }
 
-        btc_market_count = 0
-        eth_market_count = 0
-        other_market_count = 0
+        insert_result = trades.insert_one(trade_formatted)
 
+        logging.debug(
+            f"insert_result.inserted_id: {insert_result.inserted_id}")
+
+        print_trade(trade_formatted)
+
+# What to do with each candle update
+
+
+def handle_intervals_update(interval_update):
+    print(interval_update)
+
+# What to do with each orderbook spread update
+
+
+def handle_orderbook_snapshot_updates(orderbook_snapshot_update):
+    print(orderbook_snapshot_update)
+
+# What to do with each orderbook spread update
+
+
+def handle_orderbook_spread_updates(orderbook_spread_update):
+    print(orderbook_spread_update)
+
+# What to do with each orderbook delta update
+
+
+def handle_orderbook_delta_updates(orderbook_delta_update):
+    print(orderbook_delta_update)
+
+
+cw.stream.on_orderbook_delta_update = handle_orderbook_delta_updates
+cw.stream.on_orderbook_spread_update = handle_orderbook_spread_updates
+cw.stream.on_orderbook_snapshot_update = handle_orderbook_snapshot_updates
+cw.stream.on_intervals_update = handle_intervals_update
+cw.stream.on_trades_update = handle_trades_update
+
+sub_reference = {}
+
+max_len = {
+    'exchange': 0,
+    'amount': 0,
+    'base': 0,
+    'price': 0,
+    'quote': 0,
+    'side': 4
+}
+
+
+def build_subscription(top_markets):
+    subscription_list = []
+
+    btc_market_count = 0
+    eth_market_count = 0
+    other_market_count = 0
+
+    try:
         for market in top_markets:
             if market['baseObj']['symbol'] == 'btc':
                 btc_market_count += 1
@@ -95,94 +157,63 @@ class CryptowatchStream:
         logger.info(f"ETH Markets:   {eth_market_count}")
         logger.info(f"Other Markets: {other_market_count}")
 
-        self.subscription_info = {
-            'subscriptions': subscription_list,
-            'reference': sub_reference
-        }
+        cw.stream.subscriptions = subscription_list
 
-        self.ticker_tape = TickerTape(max_lengths=max_len)
+        sub_ready = True
 
-    # What to do with each trade update
-    def handle_trades_update(self, trade_update):
-        trade_json = json.loads(MessageToJson(trade_update))
+    except Exception as e:
+        logger.exception(e)
 
-        received_timestamp = time.time_ns()
-        id = trade_json['marketUpdate']['market']['marketId']
-        exchange = self.subscription_info['reference'][id]['exchange']
-        market = self.subscription_info['reference'][id]['market']
-        base_currency = self.subscription_info['reference'][id]['base']
-        quote_currency = self.subscription_info['reference'][id]['quote']
+        sub_ready = False
 
-        for trade in trade_json['marketUpdate']['tradesUpdate']['trades']:
-            trade_formatted = {
-                "received_timestamp": received_timestamp,
-                "id": id,
-                "exchange": exchange,
-                "market": market,
-                "timestamp": datetime.datetime.fromtimestamp(int(trade['timestamp'])),
-                "price": Decimal128(trade['priceStr']),
-                "amount": Decimal128(trade['amountStr']),
-                "timestampNano": Int64(trade['timestampNano']),
-                "orderSide": trade['orderSide'].rstrip('SIDE'),
-                "baseCurrency": base_currency,
-                "quoteCurrency": quote_currency
-            }
+    finally:
+        return sub_ready
 
-            insert_result = self.trades.insert_one(trade_formatted)
 
-            logging.debug(
-                f"insert_result.inserted_id: {insert_result.inserted_id}")
+def print_trade(trade_formatted, max_lengths):
+    return f"{trade_formatted['orderSide']:{max_lengths['side']}} | {trade_formatted['baseCurrency'].upper():{max_lengths['base']}} | {str(trade_formatted['amount']):{max_lengths['amount']}} @ {str(trade_formatted['price']):{max_lengths['price']}} {trade_formatted['quoteCurrency'].upper():{max_lengths['quote']}} | {trade_formatted['market']:{max_lengths['exchange']}} | {trade_formatted['market']}"
 
-            self.ticker_tape.tick(trade_formatted)
 
-    # What to do with each candle update
+def start_stream(self, enable_trace=False, use_rel=False):
+    cw.stream.connect(enable_trace=enable_trace, use_rel=use_rel)
 
-    def handle_intervals_update(self, interval_update):
-        print(interval_update)
+    exception_count = 0
+    while True:
+        try:
+            time.sleep(0.1)
 
-    # What to do with each orderbook spread update
+        except KeyboardInterrupt:
+            logger.info('Exit signal received.')
+            # Stop receiving
+            cw.stream.disconnect()
+            logger.info('Disconnected from stream.')
+            break
 
-    def handle_orderbook_snapshot_updates(self, orderbook_snapshot_update):
-        print(orderbook_snapshot_update)
+        except Exception as e:
+            exception_count += 1
+            logger.exception(e)
+            with open('errors.log', 'a') as error_file:
+                error_file.write(
+                    f"{datetime.datetime.now().strftime('%md-%dd-%YY %HH%MM%SS')} - Exception - {e}")
+            time.sleep(5)
+            cw.stream.connect()
+            logger.info('Reconnected to stream.')
 
-    # What to do with each orderbook spread update
+    logger.info(f"Exception Count: {exception_count}")
+    logger.info('Exiting.')
 
-    def handle_orderbook_spread_updates(self, orderbook_spread_update):
-        print(orderbook_spread_update)
 
-    # What to do with each orderbook delta update
+def main():
+    market_info = MarketInfo()
+    top_markets = market_info.get_top_markets(
+        ['btc', 'eth'], count=config['cryptowatch']['subscription_count'])
 
-    def handle_orderbook_delta_updates(self, orderbook_delta_update):
-        print(orderbook_delta_update)
+    if not build_subscription(top_markets):
+        logger.error("Failed to build subscription.")
+        sys.exit(1)
 
-    def start_stream(self):
-        cw.stream.connect()
-
-        exception_count = 0
-        while True:
-            try:
-                time.sleep(0.1)
-
-            except KeyboardInterrupt:
-                logger.info('Exit signal received.')
-                # Stop receiving
-                cw.stream.disconnect()
-                logger.info('Disconnected from stream.')
-                break
-
-            except Exception as e:
-                exception_count += 1
-                logger.exception(e)
-                with open('errors.log', 'a') as error_file:
-                    error_file.write(
-                        f"{datetime.datetime.now().strftime('%md-%dd-%YY %HH%MM%SS')} - Exception - {e}")
-                time.sleep(5)
-                cw.stream.connect()
-                logger.info('Reconnected to stream.')
-
-        logger.info(f"Exception Count: {exception_count}")
-        logger.info('Exiting.')
+    cw_stream.start_stream(enable_trace=True)
 
 
 if __name__ == '__main__':
-    pass
+    main()
