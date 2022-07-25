@@ -11,10 +11,23 @@ import sys
 from google.protobuf.json_format import MessageToJson
 from pymongo import MongoClient
 
-from tickertape import TickerTape
 from cwatchhelper import MarketInfo
 
-logger = logging.getLogger("cryptowatch")
+from pprint import pprint
+
+# logger = logging.getLogger("cryptowatch")
+logging.basicConfig(
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+# logging.getLogger("cryptowatch").setLevel(logging.DEBUG)
+
+# log_format = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+# stream_handler = logging.StreamHandler()
+# stream_handler.setFormatter(log_format)
+# stream_handler.setLevel(logging.DEBUG)
+# logger.addHandler(stream_handler)
 
 config = configparser.RawConfigParser()
 config.read('.credentials.cfg')
@@ -65,7 +78,7 @@ def handle_trades_update(trade_update):
 
         logging.debug(
             f"insert_result.inserted_id: {insert_result.inserted_id}")
-
+        
         print_trade(trade_formatted)
 
 # What to do with each candle update
@@ -112,6 +125,8 @@ max_len = {
 
 
 def build_subscription(top_markets):
+    sub_ready = None
+
     subscription_list = []
 
     btc_market_count = 0
@@ -151,7 +166,8 @@ def build_subscription(top_markets):
             if len(sub_reference[str(market['id'])]['quote']) > max_len['quote']:
                 max_len['quote'] = len(
                     sub_reference[str(market['id'])]['quote'])
-        logger.debug(f"max_len: {max_len}")
+            logger.debug(f"(loop)  max_len: {max_len}")
+        logger.debug(f"(final) Smax_len: {max_len}")
 
         logger.info(f"BTC Markets:   {btc_market_count}")
         logger.info(f"ETH Markets:   {eth_market_count}")
@@ -170,11 +186,11 @@ def build_subscription(top_markets):
         return sub_ready
 
 
-def print_trade(trade_formatted, max_lengths):
-    return f"{trade_formatted['orderSide']:{max_lengths['side']}} | {trade_formatted['baseCurrency'].upper():{max_lengths['base']}} | {str(trade_formatted['amount']):{max_lengths['amount']}} @ {str(trade_formatted['price']):{max_lengths['price']}} {trade_formatted['quoteCurrency'].upper():{max_lengths['quote']}} | {trade_formatted['market']:{max_lengths['exchange']}} | {trade_formatted['market']}"
+def print_trade(trade_formatted):
+    # print(f"{trade_formatted['orderSide']:{max_len['side']}} | {trade_formatted['baseCurrency'].upper():{max_len['base']}} | {str(trade_formatted['amount']):{max_len['amount']}} @ {str(trade_formatted['price']):{max_len['price']}} {trade_formatted['quoteCurrency'].upper():{max_len['quote']}} | {trade_formatted['exchange']:{max_len['exchange']}} | {trade_formatted['market']}")
+    print(f"{trade_formatted['orderSide']:{max_len['side']}} | {trade_formatted['baseCurrency'].upper():{max_len['base']}} | {str(trade_formatted['amount']):{max_len['amount']}} @ {'{:.2f}'.format(trade_formatted['price'].to_decimal()):{max_len['price'] + 2}} {trade_formatted['quoteCurrency'].upper():{max_len['quote']}} | {trade_formatted['exchange']:{max_len['exchange']}} | {trade_formatted['market']}")
 
-
-def start_stream(self, enable_trace=False, use_rel=False):
+def start_stream(enable_trace=False, use_rel=False):
     cw.stream.connect(enable_trace=enable_trace, use_rel=use_rel)
 
     exception_count = 0
@@ -211,8 +227,9 @@ def main():
     if not build_subscription(top_markets):
         logger.error("Failed to build subscription.")
         sys.exit(1)
+    # sys.exit()
 
-    cw_stream.start_stream(enable_trace=True)
+    start_stream(enable_trace=False)
 
 
 if __name__ == '__main__':
