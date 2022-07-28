@@ -14,11 +14,10 @@ from pprint import pprint
 from google.protobuf.json_format import MessageToJson
 from pymongo import MongoClient
 
-logging.basicConfig(
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+logging.basicConfig(format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 # logging.getLogger("cryptowatch").setLevel(logging.DEBUG)
 
-logger = logging.getLogger('__main__')
+logger = logging.getLogger("__main__")
 # logger.setLevel(logging.DEBUG)
 stream_handler = logging.StreamHandler()
 stream_handler.setLevel(logging.DEBUG)
@@ -26,27 +25,20 @@ logger.addHandler(stream_handler)
 
 config = configparser.RawConfigParser()
 
-config.read('settings.cfg')
+config.read("settings.cfg")
 
-db = MongoClient(config['mongodb']['host'])[config['mongodb']['db']]
-trades = db[config['mongodb']['collection']]
+db = MongoClient(config["mongodb"]["host"])[config["mongodb"]["db"]]
+trades = db[config["mongodb"]["collection"]]
 
-sub_count = int(config['cryptowatch']['subscription_count'])
+sub_count = int(config["cryptowatch"]["subscription_count"])
 
 config = configparser.RawConfigParser()
-config.read('.credentials.cfg')
+config.read(".credentials.cfg")
 
 # Set your API Key
-cw.api_key = config['cryptowatch']['api_key']
+cw.api_key = config["cryptowatch"]["api_key"]
 
-max_len = {
-    'exchange': 0,
-    'amount': 0,
-    'base': 0,
-    'price': 0,
-    'quote': 0,
-    'side': 4
-}
+max_len = {"exchange": 0, "amount": 0, "base": 0, "price": 0, "quote": 0, "side": 4}
 
 
 class MarketInfo:
@@ -62,7 +54,7 @@ class MarketInfo:
         result = requests.get(url)
 
         if result.status_code == 200:
-            asset_info = result.json()['result']['rows']
+            asset_info = result.json()["result"]["rows"]
         else:
             asset_info = f"Status Code: {result.status_code}"
 
@@ -74,33 +66,34 @@ def handle_trades_update(trade_update):
     trade_json = json.loads(MessageToJson(trade_update))
 
     received_timestamp = time.time_ns()
-    id = trade_json['marketUpdate']['market']['marketId']
-    exchange = sub_reference[id]['exchange']
-    market = sub_reference[id]['market']
-    base_currency = sub_reference[id]['base']
-    quote_currency = sub_reference[id]['quote']
+    id = trade_json["marketUpdate"]["market"]["marketId"]
+    exchange = sub_reference[id]["exchange"]
+    market = sub_reference[id]["market"]
+    base_currency = sub_reference[id]["base"]
+    quote_currency = sub_reference[id]["quote"]
 
-    for trade in trade_json['marketUpdate']['tradesUpdate']['trades']:
+    for trade in trade_json["marketUpdate"]["tradesUpdate"]["trades"]:
         trade_formatted = {
             "received_timestamp": received_timestamp,
             "id": id,
             "exchange": exchange,
             "market": market,
-            "timestamp": datetime.datetime.fromtimestamp(int(trade['timestamp'])),
-            "price": Decimal128(trade['priceStr']),
-            "amount": Decimal128(trade['amountStr']),
-            "timestampNano": Int64(trade['timestampNano']),
-            "orderSide": trade['orderSide'].rstrip('SIDE'),
+            "timestamp": datetime.datetime.fromtimestamp(int(trade["timestamp"])),
+            "price": Decimal128(trade["priceStr"]),
+            "amount": Decimal128(trade["amountStr"]),
+            "timestampNano": Int64(trade["timestampNano"]),
+            "orderSide": trade["orderSide"].rstrip("SIDE"),
             "baseCurrency": base_currency,
-            "quoteCurrency": quote_currency
+            "quoteCurrency": quote_currency,
         }
 
         insert_result = trades.insert_one(trade_formatted)
 
-        logging.debug(
-            f"insert_result.inserted_id: {insert_result.inserted_id}")
+        logging.debug(f"insert_result.inserted_id: {insert_result.inserted_id}")
 
-        print(f"{trade_formatted['orderSide']:{max_len['side']}} | {base_currency.upper():{max_len['base']}} | {str(trade_formatted['amount']):{max_len['amount']}} @ {str(trade_formatted['price']):{max_len['price']}} {quote_currency.upper():{max_len['quote']}} | {exchange:{max_len['exchange']}} | {market}")
+        print(
+            f"{trade_formatted['orderSide']:{max_len['side']}} | {base_currency.upper():{max_len['base']}} | {str(trade_formatted['amount']):{max_len['amount']}} @ {str(trade_formatted['price']):{max_len['price']}} {quote_currency.upper():{max_len['quote']}} | {exchange:{max_len['exchange']}} | {market}"
+        )
 
 
 # What to do with each candle update
@@ -122,6 +115,7 @@ def handle_orderbook_spread_updates(orderbook_spread_update):
 def handle_orderbook_delta_updates(orderbook_delta_update):
     print(orderbook_delta_update)
 
+
 # cw.stream.subscriptions = ["markets:*:trades", "markets:*:ohlc"]
 # cw.stream.subscriptions = ["assets:60:book:snapshots"]
 # cw.stream.subscriptions = ["assets:60:book:spread"]
@@ -140,45 +134,48 @@ cw.stream.on_trades_update = handle_trades_update
 sub_reference = {}
 
 
-if __name__ == '__main__':
-    logger.info('Getting top markets.')
+if __name__ == "__main__":
+    logger.info("Getting top markets.")
     market_info = MarketInfo()
-    top_markets = market_info.get_top_markets(['btc', 'eth'], count=sub_count)
+    top_markets = market_info.get_top_markets(["btc", "eth"], count=sub_count)
 
-    logger.info('Building subscription list.')
+    logger.info("Building subscription list.")
     subscription_list = []
     btc_market_count = 0
     eth_market_count = 0
     other_market_count = 0
 
-    print('\n--- MARKETS ---\n')
+    print("\n--- MARKETS ---\n")
     for market in top_markets:
-        if market['baseObj']['symbol'] == 'btc':
+        if market["baseObj"]["symbol"] == "btc":
             btc_market_count += 1
-        elif market['baseObj']['symbol'] == 'eth':
+        elif market["baseObj"]["symbol"] == "eth":
             eth_market_count += 1
         else:
             other_market_count += 1
-        print(market['symbol'])
+        print(market["symbol"])
         subscription_list.append(f"markets:{market['id']}:trades")
-        sub_reference[str(market['id'])] = {
-            'exchange': market['exchangeObj']['name'],
-            'market': market['instrumentObj']['v3_slug'],
-            'base': market['instrumentObj']['base'],
-            'quote': market['instrumentObj']['quote']
+        sub_reference[str(market["id"])] = {
+            "exchange": market["exchangeObj"]["name"],
+            "market": market["instrumentObj"]["v3_slug"],
+            "base": market["instrumentObj"]["base"],
+            "quote": market["instrumentObj"]["quote"],
         }
-        if len(sub_reference[str(market['id'])]['exchange']) > max_len['exchange']:
-            max_len['exchange'] = len(
-                sub_reference[str(market['id'])]['exchange'])
-        if len(str(max(market['liquidity']['ask'], market['liquidity']['bid']))) > max_len['amount']:
-            max_len['amount'] = len(
-                str(max(market['liquidity']['ask'], market['liquidity']['bid'])))
-        if len(sub_reference[str(market['id'])]['base']) > max_len['base']:
-            max_len['base'] = len(sub_reference[str(market['id'])]['base'])
-        if len(str(market['summary']['price']['high'])) > max_len['price']:
-            max_len['price'] = len(str(market['summary']['price']['high']))
-        if len(sub_reference[str(market['id'])]['quote']) > max_len['quote']:
-            max_len['quote'] = len(sub_reference[str(market['id'])]['quote'])
+        if len(sub_reference[str(market["id"])]["exchange"]) > max_len["exchange"]:
+            max_len["exchange"] = len(sub_reference[str(market["id"])]["exchange"])
+        if (
+            len(str(max(market["liquidity"]["ask"], market["liquidity"]["bid"])))
+            > max_len["amount"]
+        ):
+            max_len["amount"] = len(
+                str(max(market["liquidity"]["ask"], market["liquidity"]["bid"]))
+            )
+        if len(sub_reference[str(market["id"])]["base"]) > max_len["base"]:
+            max_len["base"] = len(sub_reference[str(market["id"])]["base"])
+        if len(str(market["summary"]["price"]["high"])) > max_len["price"]:
+            max_len["price"] = len(str(market["summary"]["price"]["high"]))
+        if len(sub_reference[str(market["id"])]["quote"]) > max_len["quote"]:
+            max_len["quote"] = len(sub_reference[str(market["id"])]["quote"])
     logger.debug(f"{max_len = }")
 
     print(f"BTC Markets:   {btc_market_count}")
@@ -188,7 +185,7 @@ if __name__ == '__main__':
     cw.stream.subscriptions = subscription_list
     # time.sleep(5)
 
-    logger.info('Connecting to stream.')
+    logger.info("Connecting to stream.")
     # Start receiving
     cw.stream.connect(enable_trace=True)
 
@@ -198,21 +195,22 @@ if __name__ == '__main__':
             time.sleep(0.1)
 
         except KeyboardInterrupt:
-            logger.info('Exit signal received.')
+            logger.info("Exit signal received.")
             # Stop receiving
             cw.stream.disconnect()
-            logger.info('Disconnected from stream.')
+            logger.info("Disconnected from stream.")
             break
 
         except Exception as e:
             exception_count += 1
             logger.exception(e)
-            with open('errors.log', 'a') as error_file:
+            with open("errors.log", "a") as error_file:
                 error_file.write(
-                    f"{datetime.datetime.now().strftime('%md-%dd-%YY %HH%MM%SS')} - Exception - {e}")
+                    f"{datetime.datetime.now().strftime('%md-%dd-%YY %HH%MM%SS')} - Exception - {e}"
+                )
             time.sleep(5)
             cw.stream.connect()
-            logger.info('Reconnected to stream.')
+            logger.info("Reconnected to stream.")
 
     logger.info(f"Exception Count: {exception_count}")
-    logger.info('Exiting.')
+    logger.info("Exiting.")

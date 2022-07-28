@@ -16,8 +16,7 @@ from cwatchhelper import MarketInfo
 from pprint import pprint
 
 # logger = logging.getLogger("cryptowatch")
-logging.basicConfig(
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+logging.basicConfig(format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 # logging.getLogger("cryptowatch").setLevel(logging.DEBUG)
 
 # log_format = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
@@ -30,18 +29,22 @@ logger.setLevel(logging.DEBUG)
 # logger.addHandler(stream_handler)
 
 config = configparser.RawConfigParser()
-config.read('.credentials.cfg')
-cw.api_key = config['cryptowatch']['api_key']
+config.read(".credentials.cfg")
+cw.api_key = config["cryptowatch"]["api_key"]
 
-config.read('settings.cfg')
+config.read("settings.cfg")
 
-db = MongoClient(config['mongodb']['host'])[config['mongodb']['db']]
-trades = db[config['mongodb']['collection']]
+db = MongoClient(
+    host=config["mongodb"]["host"],
+    port=int(config["mongodb"]["port"]),
+    directConnection=True,
+)[config["mongodb"]["db"]]
+trades = db[config["mongodb"]["collection"]]
 
 # cw.stream.subscriptions = ["markets:*:trades", "markets:*:ohlc"]
 # cw.stream.subscriptions = ["assets:60:book:snapshots"]
 # cw.stream.subscriptions = ["assets:60:book:spread"]
-# cw.stream.subscriptions = ["assets:60:book:deltas"]
+# cw.stream.subscriptions = ["assets:60:book:deltas"]pymongo.errors.ServerSelectionTimeoutError: Could not reach any servers in
 # cw.stream.subscriptions = ["markets:*:ohlc"]
 # cw.stream.subscriptions = ["markets:*:trades"]
 # cw.stream.subscriptions = ["markets:579:trades"]
@@ -53,33 +56,33 @@ def handle_trades_update(trade_update):
     trade_json = json.loads(MessageToJson(trade_update))
 
     received_timestamp = time.time_ns()
-    id = trade_json['marketUpdate']['market']['marketId']
-    exchange = sub_reference[id]['exchange']
-    market = sub_reference[id]['market']
-    base_currency = sub_reference[id]['base']
-    quote_currency = sub_reference[id]['quote']
+    id = trade_json["marketUpdate"]["market"]["marketId"]
+    exchange = sub_reference[id]["exchange"]
+    market = sub_reference[id]["market"]
+    base_currency = sub_reference[id]["base"]
+    quote_currency = sub_reference[id]["quote"]
 
-    for trade in trade_json['marketUpdate']['tradesUpdate']['trades']:
+    for trade in trade_json["marketUpdate"]["tradesUpdate"]["trades"]:
         trade_formatted = {
             "received_timestamp": received_timestamp,
             "id": id,
             "exchange": exchange,
             "market": market,
-            "timestamp": datetime.datetime.fromtimestamp(int(trade['timestamp'])),
-            "price": Decimal128(trade['priceStr']),
-            "amount": Decimal128(trade['amountStr']),
-            "timestampNano": Int64(trade['timestampNano']),
-            "orderSide": trade['orderSide'].rstrip('SIDE'),
+            "timestamp": datetime.datetime.fromtimestamp(int(trade["timestamp"])),
+            "price": Decimal128(trade["priceStr"]),
+            "amount": Decimal128(trade["amountStr"]),
+            "timestampNano": Int64(trade["timestampNano"]),
+            "orderSide": trade["orderSide"].rstrip("SIDE"),
             "baseCurrency": base_currency,
-            "quoteCurrency": quote_currency
+            "quoteCurrency": quote_currency,
         }
 
         insert_result = trades.insert_one(trade_formatted)
 
-        logging.debug(
-            f"insert_result.inserted_id: {insert_result.inserted_id}")
-        
+        logger.debug(f"insert_result.inserted_id: {insert_result.inserted_id}")
+
         print_trade(trade_formatted)
+
 
 # What to do with each candle update
 
@@ -87,17 +90,20 @@ def handle_trades_update(trade_update):
 def handle_intervals_update(interval_update):
     print(interval_update)
 
+
 # What to do with each orderbook spread update
 
 
 def handle_orderbook_snapshot_updates(orderbook_snapshot_update):
     print(orderbook_snapshot_update)
 
+
 # What to do with each orderbook spread update
 
 
 def handle_orderbook_spread_updates(orderbook_spread_update):
     print(orderbook_spread_update)
+
 
 # What to do with each orderbook delta update
 
@@ -114,14 +120,7 @@ cw.stream.on_trades_update = handle_trades_update
 
 sub_reference = {}
 
-max_len = {
-    'exchange': 0,
-    'amount': 0,
-    'base': 0,
-    'price': 0,
-    'quote': 0,
-    'side': 4
-}
+max_len = {"exchange": 0, "amount": 0, "base": 0, "price": 0, "quote": 0, "side": 4}
 
 
 def build_subscription(top_markets):
@@ -135,9 +134,9 @@ def build_subscription(top_markets):
 
     try:
         for market in top_markets:
-            if market['baseObj']['symbol'] == 'btc':
+            if market["baseObj"]["symbol"] == "btc":
                 btc_market_count += 1
-            elif market['baseObj']['symbol'] == 'eth':
+            elif market["baseObj"]["symbol"] == "eth":
                 eth_market_count += 1
             else:
                 other_market_count += 1
@@ -145,27 +144,27 @@ def build_subscription(top_markets):
             logger.debug(f"market['symbol']: {market['symbol']}")
 
             subscription_list.append(f"markets:{market['id']}:trades")
-            sub_reference[str(market['id'])] = {
-                'exchange': market['exchangeObj']['name'],
-                'market': market['instrumentObj']['v3_slug'],
-                'base': market['instrumentObj']['base'],
-                'quote': market['instrumentObj']['quote']
+            sub_reference[str(market["id"])] = {
+                "exchange": market["exchangeObj"]["name"],
+                "market": market["instrumentObj"]["v3_slug"],
+                "base": market["instrumentObj"]["base"],
+                "quote": market["instrumentObj"]["quote"],
             }
-            if len(sub_reference[str(market['id'])]['exchange']) > max_len['exchange']:
-                max_len['exchange'] = len(
-                    sub_reference[str(market['id'])]['exchange'])
-            if len(str(max(market['liquidity']['ask'], market['liquidity']['bid']))) > max_len['amount']:
-                max_len['amount'] = len(
-                    str(max(market['liquidity']['ask'], market['liquidity']['bid'])))
-            if len(sub_reference[str(market['id'])]['base']) > max_len['base']:
-                max_len['base'] = len(
-                    sub_reference[str(market['id'])]['base'])
-            if len(str(market['summary']['price']['high'])) > max_len['price']:
-                max_len['price'] = len(
-                    str(market['summary']['price']['high']))
-            if len(sub_reference[str(market['id'])]['quote']) > max_len['quote']:
-                max_len['quote'] = len(
-                    sub_reference[str(market['id'])]['quote'])
+            if len(sub_reference[str(market["id"])]["exchange"]) > max_len["exchange"]:
+                max_len["exchange"] = len(sub_reference[str(market["id"])]["exchange"])
+            if (
+                len(str(max(market["liquidity"]["ask"], market["liquidity"]["bid"])))
+                > max_len["amount"]
+            ):
+                max_len["amount"] = len(
+                    str(max(market["liquidity"]["ask"], market["liquidity"]["bid"]))
+                )
+            if len(sub_reference[str(market["id"])]["base"]) > max_len["base"]:
+                max_len["base"] = len(sub_reference[str(market["id"])]["base"])
+            if len(str(market["summary"]["price"]["high"])) > max_len["price"]:
+                max_len["price"] = len(str(market["summary"]["price"]["high"]))
+            if len(sub_reference[str(market["id"])]["quote"]) > max_len["quote"]:
+                max_len["quote"] = len(sub_reference[str(market["id"])]["quote"])
             logger.debug(f"(loop)  max_len: {max_len}")
         logger.debug(f"(final) Smax_len: {max_len}")
 
@@ -188,10 +187,18 @@ def build_subscription(top_markets):
 
 def print_trade(trade_formatted):
     # print(f"{trade_formatted['orderSide']:{max_len['side']}} | {trade_formatted['baseCurrency'].upper():{max_len['base']}} | {str(trade_formatted['amount']):{max_len['amount']}} @ {str(trade_formatted['price']):{max_len['price']}} {trade_formatted['quoteCurrency'].upper():{max_len['quote']}} | {trade_formatted['exchange']:{max_len['exchange']}} | {trade_formatted['market']}")
-    print(f"{trade_formatted['orderSide']:{max_len['side']}} | {trade_formatted['baseCurrency'].upper():{max_len['base']}} | {str(trade_formatted['amount']):{max_len['amount']}} @ {'{:.2f}'.format(trade_formatted['price'].to_decimal()):{max_len['price'] + 2}} {trade_formatted['quoteCurrency'].upper():{max_len['quote']}} | {trade_formatted['exchange']:{max_len['exchange']}} | {trade_formatted['market']}")
+    print(
+        f"{trade_formatted['orderSide']:{max_len['side']}} | {trade_formatted['baseCurrency'].upper():{max_len['base']}} | {str(trade_formatted['amount']):{max_len['amount']}} @ {'{:.2f}'.format(trade_formatted['price'].to_decimal()):{max_len['price'] + 2}} {trade_formatted['quoteCurrency'].upper():{max_len['quote']}} | {trade_formatted['exchange']:{max_len['exchange']}} | {trade_formatted['market']}"
+    )
 
-def start_stream(enable_trace=False, use_rel=False):
-    cw.stream.connect(enable_trace=enable_trace, use_rel=use_rel)
+
+def start_stream(ping_timeout=20, ping_interval=70, enable_trace=False, use_rel=False):
+    cw.stream.connect(
+        ping_timeout=ping_timeout,
+        ping_interval=ping_interval,
+        enable_trace=enable_trace,
+        use_rel=use_rel,
+    )
 
     exception_count = 0
     while True:
@@ -199,30 +206,40 @@ def start_stream(enable_trace=False, use_rel=False):
             time.sleep(0.1)
 
         except KeyboardInterrupt:
-            logger.info('Exit signal received.')
+            logger.info("Exit signal received.")
             # Stop receiving
             cw.stream.disconnect()
-            logger.info('Disconnected from stream.')
+            logger.info("Disconnected from stream.")
             break
 
         except Exception as e:
             exception_count += 1
             logger.exception(e)
-            with open('errors.log', 'a') as error_file:
+            with open("errors.log", "a") as error_file:
                 error_file.write(
-                    f"{datetime.datetime.now().strftime('%md-%dd-%YY %HH%MM%SS')} - Exception - {e}")
+                    f"{datetime.datetime.now().strftime('%md-%dd-%YY %HH%MM%SS')} - Exception - {e}"
+                )
             time.sleep(5)
-            cw.stream.connect()
-            logger.info('Reconnected to stream.')
+            cw.stream.connect(
+                ping_timeout=ping_timeout,
+                ping_interval=ping_interval,
+                enable_trace=enable_trace,
+                use_rel=use_rel,
+            )
+            logger.info("Reconnected to stream.")
 
     logger.info(f"Exception Count: {exception_count}")
-    logger.info('Exiting.')
+    logger.info("Exiting.")
 
 
-def main():
+def main(assets):
+    if type(assets) != list:
+        assets = [assets]
+
     market_info = MarketInfo()
     top_markets = market_info.get_top_markets(
-        ['btc', 'eth'], count=config['cryptowatch']['subscription_count'])
+        assets, count=config["cryptowatch"]["subscription_count"]
+    )
 
     if not build_subscription(top_markets):
         logger.error("Failed to build subscription.")
@@ -232,5 +249,5 @@ def main():
     start_stream(enable_trace=False)
 
 
-if __name__ == '__main__':
-    main()
+if __name__ == "__main__":
+    main(["btc", "eth"])

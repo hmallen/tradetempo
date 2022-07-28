@@ -19,7 +19,7 @@ class MarketInfo:
         result = requests.get(url)
 
         if result.status_code == 200:
-            asset_info = result.json()['result']['rows']
+            asset_info = result.json()["result"]["rows"]
         else:
             asset_info = f"Status Code: {result.status_code}"
 

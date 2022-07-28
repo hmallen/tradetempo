@@ -9,13 +9,12 @@ logger = logging.getLogger()
 
 
 class dydxWebsocket:
-
-    def __init__(self, assets):
+    def __init__(self, asset):
         # Currently only handles a single asset
         self.request_trades = {
-            'type': 'subscribe',
-            'channel': 'v3_trades',
-            'id': f"{assets.upper()}-USD"
+            "type": "subscribe",
+            "channel": "v3_trades",
+            "id": f"{asset.upper()}-USD",
         }
 
     async def main(self):
@@ -23,16 +22,16 @@ class dydxWebsocket:
         async with websockets.connect(WS_HOST_MAINNET) as websocket:
 
             await websocket.send(json.dumps(self.request_trades))
-            logger.debug(f'> {self.request_trades}')
+            logger.debug(f"> {self.request_trades}")
 
             while True:
                 try:
                     res = await websocket.recv()
-                    print(f'< {res}')
-            
+                    print(f"< {res}")
+
                 except websockets.ConnectionClosed:
                     continue
-    
+
     """async def msg_handler(self, websocket):
         while True:
             msg = await websocket.recv()
@@ -41,12 +40,12 @@ class dydxWebsocket:
     async def main(self):
         async with websockets.serve(dydxWebsocket.msg_handler, WS_HOST_MAINNET):
             await asyncio.Future()"""
-    
+
     def start_stream(self):
         # asyncio.get_event_loop().run_until_complete(dydxWebsocket.main())
         asyncio.run(dydxWebsocket.main(self))
 
 
-if __name__ == '__main__':
-    dydx_ws = dydxWebsocket(assets='btc')
+if __name__ == "__main__":
+    dydx_ws = dydxWebsocket(assets="btc")
     dydx_ws.start_stream()

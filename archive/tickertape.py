@@ -5,7 +5,6 @@ logger = logging.getLogger()
 
 
 class TickerTape:
-
     def __init__(self, max_lengths):
         self.max_lengths = max_lengths
 
