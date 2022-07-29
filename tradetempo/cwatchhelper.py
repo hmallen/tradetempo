@@ -3,7 +3,8 @@ import os
 import sys
 import requests
 
-logger = logging.getLogger()
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
 
 
 class MarketInfo:
@@ -15,8 +16,10 @@ class MarketInfo:
             assets = list(assets)
 
         url = f"https://billboard.service.cryptowat.ch/markets?page=1&limit={count}&volumeInAssets=usd&sort=volume&sortAsset=usd&onlyBaseAssets={','.join(assets)}"
+        logger.debug(f"url: {url}")
 
         result = requests.get(url)
+        logger.debug(f"result: {result}")
 
         if result.status_code == 200:
             asset_info = result.json()["result"]["rows"]

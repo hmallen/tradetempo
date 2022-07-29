@@ -11,22 +11,15 @@ import sys
 from google.protobuf.json_format import MessageToJson
 from pymongo import MongoClient
 
-from cwatchhelper import MarketInfo
+from tradetempo.cwatchhelper import MarketInfo
 
 from pprint import pprint
 
-# logger = logging.getLogger("cryptowatch")
-logging.basicConfig(format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
-# logging.getLogger("cryptowatch").setLevel(logging.DEBUG)
-
-# log_format = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-
+# logging.basicConfig(format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+# logging.basicConfig()
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
-# stream_handler = logging.StreamHandler()
-# stream_handler.setFormatter(log_format)
-# stream_handler.setLevel(logging.DEBUG)
-# logger.addHandler(stream_handler)
+
 
 config = configparser.RawConfigParser()
 config.read(".credentials.cfg")
@@ -124,6 +117,8 @@ max_len = {"exchange": 0, "amount": 0, "base": 0, "price": 0, "quote": 0, "side"
 
 
 def build_subscription(top_markets):
+    pprint(top_markets)
+
     sub_ready = None
 
     subscription_list = []
@@ -188,7 +183,7 @@ def build_subscription(top_markets):
 def print_trade(trade_formatted):
     # print(f"{trade_formatted['orderSide']:{max_len['side']}} | {trade_formatted['baseCurrency'].upper():{max_len['base']}} | {str(trade_formatted['amount']):{max_len['amount']}} @ {str(trade_formatted['price']):{max_len['price']}} {trade_formatted['quoteCurrency'].upper():{max_len['quote']}} | {trade_formatted['exchange']:{max_len['exchange']}} | {trade_formatted['market']}")
     print(
-        f"{trade_formatted['orderSide']:{max_len['side']}} | {trade_formatted['baseCurrency'].upper():{max_len['base']}} | {str(trade_formatted['amount']):{max_len['amount']}} @ {'{:.2f}'.format(trade_formatted['price'].to_decimal()):{max_len['price'] + 2}} {trade_formatted['quoteCurrency'].upper():{max_len['quote']}} | {trade_formatted['exchange']:{max_len['exchange']}} | {trade_formatted['market']}"
+        f"{trade_formatted['orderSide']:{max_len['side']}} | {trade_formatted['baseCurrency'].upper():{max_len['base']}} | {str(trade_formatted['amount']):{max_len['amount']}} @ {'{:.2f}'.format(trade_formatted['price'].to_decimal()):{max_len['price']}} {trade_formatted['quoteCurrency'].upper():{max_len['quote']}} | {trade_formatted['exchange']:{max_len['exchange']}} | {trade_formatted['market']}"
     )
 
 
@@ -236,10 +231,15 @@ def main(assets):
     if type(assets) != list:
         assets = [assets]
 
+    pprint(config["cryptowatch"]["subscription_count"])
+
     market_info = MarketInfo()
     top_markets = market_info.get_top_markets(
-        assets, count=config["cryptowatch"]["subscription_count"]
+        [asset.lower() for asset in assets],
+        count=config["cryptowatch"]["subscription_count"],
     )
+
+    pprint(top_markets)
 
     if not build_subscription(top_markets):
         logger.error("Failed to build subscription.")

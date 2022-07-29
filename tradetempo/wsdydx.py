@@ -13,7 +13,7 @@ from bson import Decimal128
 
 from pprint import pprint
 
-logging.basicConfig()
+# logging.basicConfig()
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
@@ -124,9 +124,13 @@ async def ws_client(asset):
             await message_handler(message)
 
 
-if __name__ == "__main__":
+def main(asset):
     try:
-        asyncio.run(ws_client("BTC"))
+        asyncio.run(ws_client(asset))
 
     except KeyboardInterrupt:
         logger.info("Exit signal received.")
+
+
+if __name__ == "__main__":
+    main("BTC")
