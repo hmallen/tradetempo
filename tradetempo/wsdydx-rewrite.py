@@ -18,11 +18,17 @@ from motor.motor_asyncio import AsyncIOMotorClient
 from dydx3.constants import WS_HOST_MAINNET
 
 os.chdir(sys.path[0])
-print(os.getcwd())
 
-logging.basicConfig()
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
+
+stream_handler = logging.StreamHandler()
+stream_handler.setLevel(logging.DEBUG)
+
+formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+stream_handler.setFormatter(formatter)
+
+logger.addHandler(stream_handler)
 
 config_path = "../settings.cfg"
 config = configparser.ConfigParser()
@@ -58,7 +64,7 @@ async def process_trade(trade_message, mongo_collection):
             "liquidation": trade["liquidation"],
         }
 
-        print(trade_formatted)
+        # print(trade_formatted)
 
         insert_result = await mongo_collection.insert_one(trade_formatted)
         logger.debug(f"insert_result.inserted_id: {insert_result.inserted_id}")
