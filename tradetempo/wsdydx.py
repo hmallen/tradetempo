@@ -27,8 +27,8 @@ stream_handler.setFormatter(formatter)
 
 logger.addHandler(stream_handler)
 
-config_path = "../settings.cfg"
-config = configparser.ConfigParser()
+config_path = "settings.cfg"
+config = configparser.RawConfigParser()
 config.read(config_path)
 
 _db = None
@@ -36,7 +36,7 @@ _db = None
 ## AsyncIO Functions ##
 
 
-async def process_trade(db, trade_message):
+async def process_trade(trade_message):
     received_timestamp = time.time_ns()
 
     id = trade_message["id"]
@@ -63,7 +63,8 @@ async def process_trade(db, trade_message):
             "liquidation": trade["liquidation"],
         }
 
-        insert_result = await db[config["mongodb"]["collection"]].insert_one(
+        global _db
+        insert_result = await _db[config["mongodb"]["collection"]].insert_one(
             trade_formatted
         )
         logger.debug(f"insert_result.inserted_id: {insert_result.inserted_id}")
@@ -76,9 +77,12 @@ async def consumer_handler(websocket: websockets.WebSocketClientProtocol):
         port=int(config["mongodb"]["port"]),
         directConnection=True,
     )[config["mongodb"]["db"]]
-
+    
     loop = asyncio.get_running_loop()
-    loop.add_signal_handler(signal.SIGTERM, loop.create_task, websocket.close())
+    try:
+        loop.add_signal_handler(signal.SIGTERM, loop.create_task, websocket.close())
+    except NotImplementedError:
+        logger.warning('Windows sucks and won\'t add the signal handler.')
 
     async for message in websocket:
         try:

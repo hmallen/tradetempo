@@ -27,7 +27,7 @@ from cryptowatch.utils import forge_stream_subscription_payload
 from cryptowatch.stream.proto.public.stream import stream_pb2
 from cryptowatch.stream.proto.public.client import client_pb2
 
-from cwatchhelper import MarketInfo
+from tradetempo.cwatchhelper import MarketInfo
 
 os.chdir(sys.path[0])
 
@@ -43,9 +43,9 @@ stream_handler.setFormatter(formatter)
 logger.addHandler(stream_handler)
 
 config = configparser.RawConfigParser()
-config.read("../.credentials.cfg")
+config.read(".credentials.cfg")
 cw.api_key = config["cryptowatch"]["api_key"]
-config.read("../settings.cfg")
+config.read("settings.cfg")
 
 _db = None
 
@@ -137,7 +137,10 @@ async def consumer_handler(websocket: websockets.WebSocketClientProtocol):
     )[config["mongodb"]["db"]]
 
     loop = asyncio.get_running_loop()
-    loop.add_signal_handler(signal.SIGTERM, loop.create_task, websocket.close())
+    try:
+        loop.add_signal_handler(signal.SIGTERM, loop.create_task, websocket.close())
+    except NotImplementedError:
+        logger.warning('Windows sucks and won\'t add the signal handler.')
 
     async for message in websocket:
         try:
