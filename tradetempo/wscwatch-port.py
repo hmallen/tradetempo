@@ -1,19 +1,26 @@
-# import websocket
-import traceback
-# import threading
-from google import protobuf
-
 import asyncio
 import configparser
+
+import datetime
+
 import json
 import logging
 from motor.motor_asyncio import AsyncIOMotorClient
 import os
 import signal
 import sys
+import time
 import websockets
 
+from bson import Decimal128, Int64
+
 import cryptowatch as cw
+
+import traceback
+
+from google import protobuf
+from google.protobuf.json_format import MessageToJson
+
 # from cryptowatch.utils import log
 from cryptowatch.errors import APIKeyError
 from cryptowatch.utils import forge_stream_subscription_payload
@@ -34,46 +41,35 @@ stream_handler.setFormatter(formatter)
 logger.addHandler(stream_handler)
 
 config = configparser.RawConfigParser()
-config.read('../settings.cfg')
+config.read("../.credentials.cfg")
+cw.api_key = config["cryptowatch"]["api_key"]
+config.read("../settings.cfg")
+
+_db = None
 
 
-def _on_open(ws):
-    subs_payload = forge_stream_subscription_payload(subscriptions, client_pb2)
-    logger.debug(
-        "Connection established. Sending subscriptions payload: {}".format(
-            subs_payload
-        )
-    )
-    ws.send(subs_payload)
-
-
-def _on_error(ws, error):
-    logger.error(str(error))
-
-
-def _on_close(ws, close_status_code, close_reason):
-    logger.debug("Connection closed.")
-
-
-def on_market_update(message):
+async def message_router(message):
     try:
         if message == b"\x01":
             logger.debug(f"Heartbeat received: {message}")
             return
+
         stream_message = stream_pb2.StreamMessage()
         stream_message.ParseFromString(message)
+
         if str(stream_message.marketUpdate.intervalsUpdate):
-            on_intervals_update(stream_message)
+            await intervals_update(stream_message)
         elif str(stream_message.marketUpdate.tradesUpdate):
-            on_trades_update(stream_message)
+            await trades_update(json.loads(MessageToJson(stream_message)))
         elif str(stream_message.marketUpdate.orderBookUpdate):
-            on_orderbook_snapshot_update(stream_message)
+            await orderbook_snapshot_update(stream_message)
         elif str(stream_message.marketUpdate.orderBookDeltaUpdate):
-            on_orderbook_delta_update(stream_message)
+            await orderbook_delta_update(stream_message)
         elif str(stream_message.marketUpdate.orderBookSpreadUpdate):
-            on_orderbook_spread_update(stream_message)
+            await orderbook_spread_update(stream_message)
         else:
             logger.debug(stream_message)
+
     except protobuf.message.DecodeError as ex:
         logger.error("Could not decode this message: {}".format(message))
         logger.error(traceback.format_exc())
@@ -81,40 +77,71 @@ def on_market_update(message):
         logger.error(traceback.format_exc())
 
 
-def on_trades_update(trades_update):
+async def trades_update(trades_update):
+    received_timestamp = time.time_ns()
+    exchange_id = Int64(trades_update["marketUpdate"]["market"]["exchangeId"])
+    market_id = Int64(trades_update["marketUpdate"]["market"]["marketId"])
+    currency_pair_id = Int64(trades_update["marketUpdate"]["market"]["currencyPairId"])
+
+    for trade in trades_update["marketUpdate"]["tradesUpdate"]["trades"]:
+        trade_formatted = {
+            "receivedTimestamp": received_timestamp,
+            "exchangeId": exchange_id,
+            "marketId": market_id,
+            "currencyPairId": currency_pair_id,
+            # "market": XYZ,
+            # "exchange": XYZ,
+            # "base": XYZ,
+            # "quote": XYZ,
+            "side": trade["orderSide"].rstrip("SIDE").lower(),
+            "price": Decimal128(trade["priceStr"]),
+            "amount": Decimal128(trade["amountStr"]),
+            "timestamp": datetime.datetime.fromtimestamp(int(trade["timestamp"])),
+            "timestampNano": Int64(trade["timestampNano"]),
+            "priceStr": trade["priceStr"],
+            "amountStr": trade["amountStr"],
+            "externalId": trade["externalId"],
+        }
+
+        global _db
+        insert_result = await _db[config["mongodb"]["collection"]].insert_one(
+            trade_formatted
+        )
+        logger.debug(f"insert_result.inserted_id: {insert_result.inserted_id}")
+
+
+async def intervals_update(intervals_update):
     pass
 
 
-def on_intervals_update(intervals_update):
+async def orderbook_spread_update(orderbook_spread_update):
     pass
 
 
-def on_orderbook_spread_update(orderbook_spread_update):
+async def orderbook_delta_update(orderbook_delta_update):
     pass
 
 
-def on_orderbook_delta_update(orderbook_delta_update):
-    pass
-
-
-def on_orderbook_snapshot_update(orderbook_snapshot_update):
+async def orderbook_snapshot_update(orderbook_snapshot_update):
     pass
 
 
 async def consumer_handler(websocket: websockets.WebSocketClientProtocol):
-    db = AsyncIOMotorClient(
+    global _db
+    _db = AsyncIOMotorClient(
         host=config["mongodb"]["host"],
         port=int(config["mongodb"]["port"]),
         directConnection=True,
     )[config["mongodb"]["db"]]
-    trade_collection = db[config["mongodb"]["collection"]]
+    # trade_collection = db[config["mongodb"]["collection"]]
 
     loop = asyncio.get_running_loop()
     loop.add_signal_handler(signal.SIGTERM, loop.create_task, websocket.close())
 
     async for message in websocket:
         try:
-            print(message.decode())
+            await asyncio.create_task(message_router(message))
+
             """trade_json = json.loads(message)
 
             print(json.dumps(trade_json, indent=4))
@@ -129,14 +156,14 @@ async def consumer_handler(websocket: websockets.WebSocketClientProtocol):
 
         except asyncio.CancelledError:
             logger.debug("CancelledError raised.")
-            break
+            continue
+
+        # except KeyboardInterrupt:
+        #     logger.info('Exit signal received.')
+        #     break
 
 
-
-async def consume(ws_url, subscription_list):
-    subs_payload = forge_stream_subscription_payload(subscription_list, client_pb2)
-    logger.debug(f"subs_payload: {subs_payload.decode()}")
-
+async def consume(ws_url, subs_payload):
     async with websockets.connect(ws_url) as websocket:
         logger.debug(
             "Connection established. Sending subscriptions payload: {}".format(
@@ -150,9 +177,7 @@ async def consume(ws_url, subscription_list):
 
 def start_stream(subscription_list):
     if cw.api_key:
-        DSN = "{}?apikey={}&format=binary".format(
-            cw.ws_endpoint, cw.api_key
-        )
+        DSN = "{}?apikey={}&format=binary".format(cw.ws_endpoint, cw.api_key)
     else:
         raise APIKeyError(
             "An API key is required to use the Cryptowatch Websocket API.\n"
@@ -160,52 +185,28 @@ def start_stream(subscription_list):
         )
     logger.debug("DSN used: {}".format(DSN))
 
+    subs_payload = forge_stream_subscription_payload(subscription_list, client_pb2)
+    logger.debug(f"subs_payload: {subs_payload}")
+
     try:
-        asyncio.run(consume(DSN, subscription_list))
-    
+        asyncio.run(consume(DSN, subs_payload))
+
     except KeyboardInterrupt:
         logger.info("Exit signal received.")
 
-    """global _ws
-    _ws = websocket.WebSocketApp(
-        DSN,
-        on_message=on_market_update,
-        on_error=_on_error,
-        on_close=_on_close,
-        on_open=_on_open,
-    )
-    wst = threading.Thread(
-        target=_ws.run_forever,
-        # kwargs={"ping_timeout": ping_timeout, "ping_interval": ping_interval},
-        kwargs=keyword_args,
-    )
-    wst.daemon = False
-    wst.start()
-    if use_rel:
-        rel.signal(2, rel.abort)  # Keyboard Interrupt
-        rel.dispatch()
 
-    logger.debug(
-        "Ping timeout used: {}. Ping interval used: {}".format(
-            ping_timeout, ping_interval
-        ),
-        is_debug=True,
-    )
+# def disconnect():
+#     global _ws
+#     _ws.close()
 
 
-def disconnect():
-    global _ws
-    _ws.close()"""
-
-
-if __name__ == '__main__':
+if __name__ == "__main__":
     from cwatchhelper import MarketInfo
 
     market_info = MarketInfo()
     top_markets = market_info.get_top_markets(assets=["btc", "eth"], count=4)
     subscriptions = market_info.build_subscriptions(
-        sub_type='trades',
-        markets=[mkt['id'] for mkt in top_markets]
+        sub_type="trades", markets=[mkt["id"] for mkt in top_markets]
     )
 
     start_stream(subscriptions)

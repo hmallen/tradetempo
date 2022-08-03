@@ -2,14 +2,12 @@ import asyncio
 from bson import Decimal128
 import configparser
 import datetime
-import functools
 import json
 import logging
 import os
 import signal
 import sys
 import time
-from py import process
 
 # from websockets import WebSocketClientProtocol
 import websockets
@@ -34,10 +32,12 @@ config_path = "../settings.cfg"
 config = configparser.ConfigParser()
 config.read(config_path)
 
+_db = None
+
 ## AsyncIO Functions ##
 
 
-async def process_trade(trade_message, mongo_collection):
+async def process_trade(db, trade_message):
     received_timestamp = time.time_ns()
 
     id = trade_message["id"]
@@ -58,25 +58,26 @@ async def process_trade(trade_message, mongo_collection):
             ),
             "price": Decimal128(trade["price"]),
             "amount": Decimal128(trade["size"]),
-            "orderSide": trade["side"].lower(),
-            "baseCurrency": base_currency,
-            "quoteCurrency": quote_currency,
+            "side": trade["side"].lower(),
+            "base": base_currency,
+            "quote": quote_currency,
             "liquidation": trade["liquidation"],
         }
 
-        # print(trade_formatted)
-
-        insert_result = await mongo_collection.insert_one(trade_formatted)
+        insert_result = await db[config["mongodb"]["collection"]].insert_one(
+            trade_formatted
+        )
         logger.debug(f"insert_result.inserted_id: {insert_result.inserted_id}")
 
 
 async def consumer_handler(websocket: websockets.WebSocketClientProtocol):
-    db = AsyncIOMotorClient(
+    global _db
+    _db = AsyncIOMotorClient(
         host=config["mongodb"]["host"],
         port=int(config["mongodb"]["port"]),
         directConnection=True,
     )[config["mongodb"]["db"]]
-    trade_collection = db[config["mongodb"]["collection"]]
+    # trade_collection = _db[config["mongodb"]["collection"]]
 
     loop = asyncio.get_running_loop()
     loop.add_signal_handler(signal.SIGTERM, loop.create_task, websocket.close())
@@ -86,12 +87,7 @@ async def consumer_handler(websocket: websockets.WebSocketClientProtocol):
             trade_json = json.loads(message)
 
             if trade_json["type"] == "channel_data":
-                await asyncio.create_task(
-                    process_trade(
-                        trade_message=trade_json,
-                        mongo_collection=trade_collection,
-                    )
-                )
+                await asyncio.create_task(process_trade(trade_message=trade_json))
 
         except asyncio.CancelledError:
             logger.debug("CancelledError raised.")

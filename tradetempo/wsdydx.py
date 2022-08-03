@@ -13,19 +13,19 @@ from bson import Decimal128
 
 from pprint import pprint
 
-# logging.basicConfig()
+logging.basicConfig()
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
 config = configparser.RawConfigParser()
 config.read("settings.cfg")
 
-db = MongoClient(
+"""db = MongoClient(
     host=config["mongodb"]["host"],
     port=int(config["mongodb"]["port"]),
     directConnection=True,
 )[config["mongodb"]["db"]]
-trades = db[config["mongodb"]["collection"]]
+trades = db[config["mongodb"]["collection"]]"""
 
 max_len = {"exchange": 4, "amount": 0, "base": 0, "price": 0, "quote": 0, "side": 4}
 
@@ -64,17 +64,17 @@ def print_trade(trade_formatted):
     )
 
 
-async def message_handler(msg):
+async def message_handler(trade_collection, msg):
     trade_json = json.loads(msg)
 
     if trade_json["type"] == "channel_data":
         received_timestamp = time.time_ns()
         id = trade_json["id"]
-        exchange = "DYDX"
-        market = trade_json["id"]
+        exchange = "dydx"
+        market = trade_json["id"].lower()
         currencies = trade_json["id"].split("-")
-        base_currency = currencies[0]
-        quote_currency = currencies[1]
+        base_currency = currencies[0].lower()
+        quote_currency = currencies[1].lower()
 
         for trade in trade_json["contents"]["trades"]:
             trade_formatted = {
@@ -87,17 +87,17 @@ async def message_handler(msg):
                 ),
                 "price": Decimal128(trade["price"]),
                 "amount": Decimal128(trade["size"]),
-                "orderSide": trade["side"],
+                "orderSide": trade["side"].lower(),
                 "baseCurrency": base_currency,
                 "quoteCurrency": quote_currency,
                 "liquidation": trade["liquidation"],
             }
 
-            insert_result = trades.insert_one(trade_formatted)
+            insert_result = trade_collection.insert_one(trade_formatted)
 
             logger.debug(f"insert_result.inserted_id: {insert_result.inserted_id}")
 
-            print_trade(trade_formatted)
+            # print_trade(trade_formatted)
 
     elif trade_json["type"] == "subscribed":
         if build_subscription(trade_json):
@@ -107,6 +107,13 @@ async def message_handler(msg):
 
 
 async def ws_client(asset):
+    db = MongoClient(
+        host=config["mongodb"]["host"],
+        port=int(config["mongodb"]["port"]),
+        directConnection=True,
+    )[config["mongodb"]["db"]]
+    trades = db[config["mongodb"]["collection"]]
+
     ws_request = {
         "type": "subscribe",
         "channel": "v3_trades",
@@ -121,7 +128,7 @@ async def ws_client(asset):
         loop.add_signal_handler(signal.SIGTERM, loop.create_task, websocket.close())
 
         async for message in websocket:
-            await message_handler(message)
+            await message_handler(trades, message)
 
 
 def main(asset):
@@ -133,4 +140,4 @@ def main(asset):
 
 
 if __name__ == "__main__":
-    main("BTC")
+    main("btc")

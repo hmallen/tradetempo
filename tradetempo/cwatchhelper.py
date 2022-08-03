@@ -38,21 +38,21 @@ class MarketInfo:
             asset_info = f"Status Code: {result.status_code}"
 
         return asset_info
-    
+
     def build_subscriptions(self, sub_type, markets):
-        if type(markets) != list:
-            markets = [markets]
-        
+        if type(markets) is not list:
+            markets = list(markets)
+
         subscription_list = []
 
-        if sub_type == 'trades':
-            [subscription_list.append(f"markets:{mkt['id']}:trades") for mkt in markets]
+        if sub_type == "trades":
+            for mkt in markets:
+                logger.debug(f"mkt: {mkt}")
+                subscription_list.append(f"markets:{mkt}:trades")
 
         else:
-            logger.error(f'Unrecognized or unimplemented subscription type: {sub_type}')
-        
-        # except:
-        #     logger.exception(traceback.format_exc())
-        
-        # finally:
-        return subscription_list    
+            logger.error(f"Unrecognized or unimplemented subscription type: {sub_type}")
+
+        logger.info(f"subscription list: {subscription_list}")
+
+        return subscription_list

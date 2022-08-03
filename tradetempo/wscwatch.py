@@ -65,7 +65,7 @@ def handle_trades_update(trade_update):
             "price": Decimal128(trade["priceStr"]),
             "amount": Decimal128(trade["amountStr"]),
             "timestampNano": Int64(trade["timestampNano"]),
-            "orderSide": trade["orderSide"].rstrip("SIDE"),
+            "orderSide": trade["orderSide"].rstrip("SIDE").lower(),
             "baseCurrency": base_currency,
             "quoteCurrency": quote_currency,
         }
@@ -73,8 +73,6 @@ def handle_trades_update(trade_update):
         insert_result = trades.insert_one(trade_formatted)
 
         logger.debug(f"insert_result.inserted_id: {insert_result.inserted_id}")
-
-        print_trade(trade_formatted)
 
 
 # What to do with each candle update
@@ -117,8 +115,6 @@ max_len = {"exchange": 0, "amount": 0, "base": 0, "price": 0, "quote": 0, "side"
 
 
 def build_subscription(top_markets):
-    pprint(top_markets)
-
     sub_ready = None
 
     subscription_list = []
@@ -140,10 +136,10 @@ def build_subscription(top_markets):
 
             subscription_list.append(f"markets:{market['id']}:trades")
             sub_reference[str(market["id"])] = {
-                "exchange": market["exchangeObj"]["name"],
+                "exchange": market["exchangeObj"]["name"].lower(),
                 "market": market["instrumentObj"]["v3_slug"],
-                "base": market["instrumentObj"]["base"],
-                "quote": market["instrumentObj"]["quote"],
+                "base": market["instrumentObj"]["base"].lower(),
+                "quote": market["instrumentObj"]["quote"].lower(),
             }
             if len(sub_reference[str(market["id"])]["exchange"]) > max_len["exchange"]:
                 max_len["exchange"] = len(sub_reference[str(market["id"])]["exchange"])
@@ -158,8 +154,6 @@ def build_subscription(top_markets):
                 max_len["base"] = len(sub_reference[str(market["id"])]["base"])
             if len(str(market["summary"]["price"]["high"])) > max_len["price"]:
                 max_len["price"] = len(str(market["summary"]["price"]["high"]))
-            if len(sub_reference[str(market["id"])]["quote"]) > max_len["quote"]:
-                max_len["quote"] = len(sub_reference[str(market["id"])]["quote"])
             logger.debug(f"(loop)  max_len: {max_len}")
         logger.debug(f"(final) Smax_len: {max_len}")
 
@@ -231,22 +225,20 @@ def main(assets):
     if type(assets) != list:
         assets = [assets]
 
-    pprint(config["cryptowatch"]["subscription_count"])
-
     market_info = MarketInfo()
     top_markets = market_info.get_top_markets(
         [asset.lower() for asset in assets],
         count=config["cryptowatch"]["subscription_count"],
     )
 
-    pprint(top_markets)
-
     if not build_subscription(top_markets):
         logger.error("Failed to build subscription.")
         sys.exit(1)
-    # sys.exit()
 
-    start_stream(enable_trace=False)
+    try:
+        start_stream(enable_trace=False)
+    except KeyboardInterrupt:
+        logger.info("Exit signal received.")
 
 
 if __name__ == "__main__":
