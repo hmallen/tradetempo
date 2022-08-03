@@ -1,119 +1,106 @@
 import asyncio
+from bson import Decimal128
 import configparser
 import datetime
 import json
 import logging
+import os
 import signal
+import sys
 import time
+
+# from websockets import WebSocketClientProtocol
 import websockets
 
+from motor.motor_asyncio import AsyncIOMotorClient
 from dydx3.constants import WS_HOST_MAINNET
-from pymongo import MongoClient
-from bson import Decimal128
 
-from pprint import pprint
+os.chdir(sys.path[0])
 
-logging.basicConfig()
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
-config = configparser.RawConfigParser()
-config.read("settings.cfg")
+stream_handler = logging.StreamHandler()
+stream_handler.setLevel(logging.DEBUG)
 
-"""db = MongoClient(
-    host=config["mongodb"]["host"],
-    port=int(config["mongodb"]["port"]),
-    directConnection=True,
-)[config["mongodb"]["db"]]
-trades = db[config["mongodb"]["collection"]]"""
+formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+stream_handler.setFormatter(formatter)
 
-max_len = {"exchange": 4, "amount": 0, "base": 0, "price": 0, "quote": 0, "side": 4}
+logger.addHandler(stream_handler)
 
+config_path = "../settings.cfg"
+config = configparser.ConfigParser()
+config.read(config_path)
 
-def build_subscription(trades_msg):
-    sub_ready = None
+_db = None
 
-    try:
-        for trade in trades_msg["contents"]["trades"]:
-            if len(trade["size"]) > max_len["amount"]:
-                max_len["amount"] = len(trade["size"])
-            if len(trades_msg["id"].split("-")[0]) > max_len["base"]:
-                max_len["base"] = len(trades_msg["id"].split("-")[0])
-            if len(trade["price"]) > max_len["price"]:
-                max_len["price"] = len(trade["price"])
-            if len(trades_msg["id"].split("-")[1]) > max_len["quote"]:
-                max_len["quote"] = len(trades_msg["id"].split("-")[1])
-            logger.debug(f"(loop)  max_len: {max_len}")
-        logger.debug(f"(final) Smax_len: {max_len}")
-
-        sub_ready = True
-
-    except Exception as e:
-        logger.exception(e)
-
-        sub_ready = False
-
-    finally:
-        return sub_ready
+## AsyncIO Functions ##
 
 
-def print_trade(trade_formatted):
-    # print(f"{trade_formatted['orderSide']:{max_len['side']}} | {trade_formatted['baseCurrency'].upper():{max_len['base']}} | {str(trade_formatted['amount']):{max_len['amount']}} @ {str(trade_formatted['price']):{max_len['price']}} {trade_formatted['quoteCurrency'].upper():{max_len['quote']}} | {trade_formatted['exchange']:{max_len['exchange']}} | {trade_formatted['market']}")
-    print(
-        f"{trade_formatted['orderSide']:{max_len['side']}} | {trade_formatted['baseCurrency'].upper():{max_len['base']}} | {str(trade_formatted['amount']):{max_len['amount']}} @ {'{:.2f}'.format(trade_formatted['price'].to_decimal()):{max_len['price'] + 2}} {trade_formatted['quoteCurrency'].upper():{max_len['quote']}} | {trade_formatted['exchange']:{max_len['exchange']}} | {trade_formatted['market']}"
-    )
+async def process_trade(db, trade_message):
+    received_timestamp = time.time_ns()
+
+    id = trade_message["id"]
+    exchange = "dydx"
+    market = trade_message["id"].lower()
+    currencies = trade_message["id"].split("-")
+    base_currency = currencies[0].lower()
+    quote_currency = currencies[1].lower()
+
+    for trade in trade_message["contents"]["trades"]:
+        trade_formatted = {
+            "received_timestamp": received_timestamp,
+            "id": id,
+            "exchange": exchange,
+            "market": market,
+            "timestamp": datetime.datetime.fromisoformat(
+                trade["createdAt"].rstrip("Z")
+            ),
+            "price": Decimal128(trade["price"]),
+            "amount": Decimal128(trade["size"]),
+            "side": trade["side"].lower(),
+            "base": base_currency,
+            "quote": quote_currency,
+            "liquidation": trade["liquidation"],
+        }
+
+        insert_result = await db[config["mongodb"]["collection"]].insert_one(
+            trade_formatted
+        )
+        logger.debug(f"insert_result.inserted_id: {insert_result.inserted_id}")
 
 
-async def message_handler(trade_collection, msg):
-    trade_json = json.loads(msg)
-
-    if trade_json["type"] == "channel_data":
-        received_timestamp = time.time_ns()
-        id = trade_json["id"]
-        exchange = "dydx"
-        market = trade_json["id"].lower()
-        currencies = trade_json["id"].split("-")
-        base_currency = currencies[0].lower()
-        quote_currency = currencies[1].lower()
-
-        for trade in trade_json["contents"]["trades"]:
-            trade_formatted = {
-                "received_timestamp": received_timestamp,
-                "id": id,
-                "exchange": exchange,
-                "market": market,
-                "timestamp": datetime.datetime.fromisoformat(
-                    trade["createdAt"].rstrip("Z")
-                ),
-                "price": Decimal128(trade["price"]),
-                "amount": Decimal128(trade["size"]),
-                "orderSide": trade["side"].lower(),
-                "baseCurrency": base_currency,
-                "quoteCurrency": quote_currency,
-                "liquidation": trade["liquidation"],
-            }
-
-            insert_result = trade_collection.insert_one(trade_formatted)
-
-            logger.debug(f"insert_result.inserted_id: {insert_result.inserted_id}")
-
-            # print_trade(trade_formatted)
-
-    elif trade_json["type"] == "subscribed":
-        if build_subscription(trade_json):
-            logger.info("Calculated lengths for trade print output.")
-        else:
-            logger.error("Error while calculating lengths for trade print output.")
-
-
-async def ws_client(asset):
-    db = MongoClient(
+async def consumer_handler(websocket: websockets.WebSocketClientProtocol):
+    global _db
+    _db = AsyncIOMotorClient(
         host=config["mongodb"]["host"],
         port=int(config["mongodb"]["port"]),
         directConnection=True,
     )[config["mongodb"]["db"]]
-    trades = db[config["mongodb"]["collection"]]
+    # trade_collection = _db[config["mongodb"]["collection"]]
 
+    loop = asyncio.get_running_loop()
+    loop.add_signal_handler(signal.SIGTERM, loop.create_task, websocket.close())
+
+    async for message in websocket:
+        try:
+            trade_json = json.loads(message)
+
+            if trade_json["type"] == "channel_data":
+                await asyncio.create_task(process_trade(trade_message=trade_json))
+
+        except asyncio.CancelledError:
+            logger.debug("CancelledError raised.")
+            break
+
+
+async def consume(subscription_request):
+    async with websockets.connect(WS_HOST_MAINNET) as websocket:
+        await websocket.send(json.dumps(subscription_request))
+        await consumer_handler(websocket)
+
+
+def start_stream(asset):
     ws_request = {
         "type": "subscribe",
         "channel": "v3_trades",
@@ -121,23 +108,12 @@ async def ws_client(asset):
     }
     logger.debug(f"ws_request: {ws_request}")
 
-    async with websockets.connect(WS_HOST_MAINNET) as websocket:
-        await websocket.send(json.dumps(ws_request))
-
-        loop = asyncio.get_running_loop()
-        loop.add_signal_handler(signal.SIGTERM, loop.create_task, websocket.close())
-
-        async for message in websocket:
-            await message_handler(trades, message)
-
-
-def main(asset):
     try:
-        asyncio.run(ws_client(asset))
+        asyncio.run(consume(ws_request))
 
     except KeyboardInterrupt:
         logger.info("Exit signal received.")
 
 
 if __name__ == "__main__":
-    main("btc")
+    start_stream("BTC")
