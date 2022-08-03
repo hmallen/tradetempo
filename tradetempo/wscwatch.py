@@ -135,7 +135,6 @@ async def consumer_handler(websocket: websockets.WebSocketClientProtocol):
         port=int(config["mongodb"]["port"]),
         directConnection=True,
     )[config["mongodb"]["db"]]
-    # trade_collection = db[config["mongodb"]["collection"]]
 
     loop = asyncio.get_running_loop()
     loop.add_signal_handler(signal.SIGTERM, loop.create_task, websocket.close())
@@ -143,18 +142,6 @@ async def consumer_handler(websocket: websockets.WebSocketClientProtocol):
     async for message in websocket:
         try:
             await asyncio.create_task(message_router(message))
-
-            """trade_json = json.loads(message)
-
-            print(json.dumps(trade_json, indent=4))
-
-            if trade_json["type"] == "channel_data":
-                await asyncio.create_task(
-                    process_trade(
-                        trade_message=trade_json,
-                        mongo_collection=trade_collection,
-                    )
-                )"""
 
         except asyncio.CancelledError:
             logger.debug("CancelledError raised.")
@@ -172,7 +159,6 @@ async def consume(ws_url, subs_payload):
                 subs_payload
             )
         )
-        # await websocket.send(json.dumps(subs_payload))
         await websocket.send(subs_payload)
         await consumer_handler(websocket)
 
@@ -183,8 +169,6 @@ def start_stream(assets, count):
     subscription_list = market_info.build_subscriptions(
         sub_type="trades", markets=[mkt["id"] for mkt in top_markets]
     )
-
-    start_stream(subscriptions)
 
     if cw.api_key:
         DSN = "{}?apikey={}&format=binary".format(cw.ws_endpoint, cw.api_key)

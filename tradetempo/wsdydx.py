@@ -9,7 +9,6 @@ import signal
 import sys
 import time
 
-# from websockets import WebSocketClientProtocol
 import websockets
 
 from motor.motor_asyncio import AsyncIOMotorClient
@@ -77,7 +76,6 @@ async def consumer_handler(websocket: websockets.WebSocketClientProtocol):
         port=int(config["mongodb"]["port"]),
         directConnection=True,
     )[config["mongodb"]["db"]]
-    # trade_collection = _db[config["mongodb"]["collection"]]
 
     loop = asyncio.get_running_loop()
     loop.add_signal_handler(signal.SIGTERM, loop.create_task, websocket.close())
