@@ -31,6 +31,10 @@ from cryptowatch.stream.proto.public.client import client_pb2
 
 from tradetempo.cwatchhelper import MarketInfo
 
+import uvloop
+
+asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
+
 os.chdir(sys.path[0])
 
 logger = logging.getLogger(__name__)
