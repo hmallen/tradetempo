@@ -181,7 +181,11 @@ def start_stream(assets, count):
     subs_payload = forge_stream_subscription_payload(subscription_list, client_pb2)
     logger.debug(f"subs_payload: {subs_payload}")
 
-    asyncio.run(consume(DSN, subs_payload))
+    try:
+        asyncio.run(consume(DSN, subs_payload))
+    
+    except KeyboardInterrupt:
+        logger.info("Exit signal received.")
 
 
 if __name__ == "__main__":
