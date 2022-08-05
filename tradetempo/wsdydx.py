@@ -28,7 +28,7 @@ stream_handler.setFormatter(formatter)
 logger.addHandler(stream_handler)
 
 file_handler = logging.FileHandler("logs/wsdydx.log")
-file_handler.setLevel(logging.ERROR)
+file_handler.setLevel(logging.INFO)
 file_handler.setFormatter(formatter)
 logger.addHandler(file_handler)
 
@@ -83,8 +83,8 @@ async def consumer_handler(websocket: websockets.WebSocketClientProtocol):
         directConnection=True,
     )[config["mongodb"]["db"]]
 
-    loop = asyncio.get_running_loop()
     try:
+        loop = asyncio.get_running_loop()
         loop.add_signal_handler(signal.SIGTERM, loop.create_task, websocket.close())
     except NotImplementedError:
         logger.warning("Windows sucks and won't add the signal handler.")
@@ -94,7 +94,7 @@ async def consumer_handler(websocket: websockets.WebSocketClientProtocol):
         trade_json = json.loads(message)
 
         if trade_json["type"] == "channel_data":
-            await asyncio.create_task(process_trade(trade_message=trade_json))
+            asyncio.create_task(process_trade(trade_message=trade_json))
 
         # except asyncio.CancelledError:
         #     logger.debug("CancelledError raised.")

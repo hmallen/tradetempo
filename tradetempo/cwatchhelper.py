@@ -17,7 +17,7 @@ stream_handler.setFormatter(formatter)
 logger.addHandler(stream_handler)
 
 file_handler = logging.FileHandler("logs/cwatchhelper.log")
-file_handler.setLevel(logging.ERROR)
+file_handler.setLevel(logging.INFO)
 file_handler.setFormatter(formatter)
 logger.addHandler(file_handler)
 

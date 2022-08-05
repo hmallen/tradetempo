@@ -6,7 +6,7 @@ import traceback
 
 from multiprocessing import Process
 
-import tradetempo.wscwatch
+import tradetempo.wscwatchsimplified
 import tradetempo.wsdydx
 
 os.chdir(sys.path[0])
@@ -22,7 +22,7 @@ stream_handler.setFormatter(formatter)
 logger.addHandler(stream_handler)
 
 file_handler = logging.FileHandler("logs/coordinator.log")
-file_handler.setLevel(logging.ERROR)
+file_handler.setLevel(logging.INFO)
 file_handler.setFormatter(formatter)
 logger.addHandler(file_handler)
 
@@ -43,7 +43,7 @@ if __name__ == "__main__":
         logger.debug(f"monitored_assets: {monitored_assets}")
 
         ws_cwatch = Process(
-            target=tradetempo.wscwatch.start_stream,
+            target=tradetempo.wscwatchsimplified.start_stream,
             args=(
                 monitored_assets["cryptowatch"],
                 config["cryptowatch"]["subscription_count"],

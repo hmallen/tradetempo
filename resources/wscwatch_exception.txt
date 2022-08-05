@@ -1,0 +1,305 @@
+Process Process-1:
+Traceback (most recent call last):
+  File "C:\Users\allen\OneDrive\Documents\src\tradetempo\env\lib\site-packages\websockets\legacy\protocol.py", line 956, in transfer_data
+    await asyncio.shield(self._put_message_waiter)
+asyncio.exceptions.CancelledError
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\allen\AppData\Local\Programs\Python\Python310\lib\multiprocessing\process.py", line 315, in _bootstrap
+    self.run()
+  File "C:\Users\allen\AppData\Local\Programs\Python\Python310\lib\multiprocessing\process.py", line 108, in run
+    self._target(*self._args, **self._kwargs)
+  File "C:\Users\allen\OneDrive\Documents\src\tradetempo\tradetempo\wscwatch.py", line 189, in start_stream
+    asyncio.run(consume(DSN, subs_payload))
+  File "C:\Users\allen\AppData\Local\Programs\Python\Python310\lib\asyncio\runners.py", line 44, in run
+    return loop.run_until_complete(main)
+  File "C:\Users\allen\AppData\Local\Programs\Python\Python310\lib\asyncio\base_events.py", line 641, in run_until_complete
+    return future.result()
+  File "C:\Users\allen\OneDrive\Documents\src\tradetempo\tradetempo\wscwatch.py", line 166, in consume
+    await consumer_handler(websocket)
+  File "C:\Users\allen\OneDrive\Documents\src\tradetempo\tradetempo\wscwatch.py", line 145, in consumer_handler
+    async for message in websocket:
+  File "C:\Users\allen\OneDrive\Documents\src\tradetempo\env\lib\site-packages\websockets\legacy\protocol.py", line 482, in __aiter__
+    yield await self.recv()
+  File "C:\Users\allen\OneDrive\Documents\src\tradetempo\env\lib\site-packages\websockets\legacy\protocol.py", line 553, in recv
+    await self.ensure_open()
+  File "C:\Users\allen\OneDrive\Documents\src\tradetempo\env\lib\site-packages\websockets\legacy\protocol.py", line 930, in ensure_open
+    raise self.connection_closed_exc()
+websockets.exceptions.ConnectionClosedError: sent 1011 (unexpected error) keepalive ping timeout; no close frame received
+
+---------------------------------------
+
+...
+2022-08-04 01:23:56,731 - tradetempo.wscwatch - DEBUG - insert_result.inserted_id: 62eb65fce329cb7fceef2840
+Future exception was never retrieved
+future: <Future finished exception=ConnectionClosedError(None, None, None)>
+websockets.exceptions.ConnectionClosedError: no close frame received or sent
+Future exception was never retrieved
+future: <Future finished exception=ConnectionClosedError(None, None, None)>
+websockets.exceptions.ConnectionClosedError: no close frame received or sent
+Future exception was never retrieved
+future: <Future finished exception=ConnectionClosedError(None, None, None)>
+websockets.exceptions.ConnectionClosedError: no close frame received or sent
+Future exception was never retrieved
+future: <Future finished exception=ConnectionClosedError(None, None, None)>
+websockets.exceptions.ConnectionClosedError: no close frame received or sent
+Future exception was never retrieved
+future: <Future finished exception=ConnectionClosedError(None, None, None)>
+websockets.exceptions.ConnectionClosedError: no close frame received or sent
+Future exception was never retrieved
+future: <Future finished exception=ConnectionClosedError(None, None, None)>
+websockets.exceptions.ConnectionClosedError: no close frame received or sent
+Future exception was never retrieved
+future: <Future finished exception=ConnectionClosedError(None, None, None)>
+websockets.exceptions.ConnectionClosedError: no close frame received or sent
+Future exception was never retrieved
+future: <Future finished exception=ConnectionClosedError(None, None, None)>
+websockets.exceptions.ConnectionClosedError: no close frame received or sent
+Future exception was never retrieved
+future: <Future finished exception=ConnectionClosedError(None, None, None)>
+websockets.exceptions.ConnectionClosedError: no close frame received or sent
+Future exception was never retrieved
+future: <Future finished exception=ConnectionClosedError(None, None, None)>
+websockets.exceptions.ConnectionClosedError: no close frame received or sent
+Future exception was never retrieved
+future: <Future finished exception=ConnectionClosedError(None, None, None)>
+websockets.exceptions.ConnectionClosedError: no close frame received or sent
+Future exception was never retrieved
+future: <Future finished exception=ConnectionClosedError(None, None, None)>
+websockets.exceptions.ConnectionClosedError: no close frame received or sent
+Future exception was never retrieved
+future: <Future finished exception=ConnectionClosedError(None, None, None)>
+websockets.exceptions.ConnectionClosedError: no close frame received or sent
+Future exception was never retrieved
+future: <Future finished exception=ConnectionClosedError(None, None, None)>
+websockets.exceptions.ConnectionClosedError: no close frame received or sent
+Future exception was never retrieved
+future: <Future finished exception=ConnectionClosedError(None, None, None)>
+websockets.exceptions.ConnectionClosedError: no close frame received or sent
+Future exception was never retrieved
+future: <Future finished exception=ConnectionClosedError(None, None, None)>
+websockets.exceptions.ConnectionClosedError: no close frame received or sent
+Future exception was never retrieved
+future: <Future finished exception=ConnectionClosedError(None, None, None)>
+websockets.exceptions.ConnectionClosedError: no close frame received or sent
+Future exception was never retrieved
+future: <Future finished exception=ConnectionClosedError(None, None, None)>
+websockets.exceptions.ConnectionClosedError: no close frame received or sent
+Future exception was never retrieved
+future: <Future finished exception=ConnectionClosedError(None, None, None)>
+websockets.exceptions.ConnectionClosedError: no close frame received or sent
+Future exception was never retrieved
+future: <Future finished exception=ConnectionClosedError(None, None, None)>
+websockets.exceptions.ConnectionClosedError: no close frame received or sent
+2022-08-04 01:23:56,741 - tradetempo.wscwatch - DEBUG - insert_result.inserted_id: 62eb65fce329cb7fceef2841
+...
+Process Process-1:
+Traceback (most recent call last):
+  File "C:\Users\allen\OneDrive\Documents\src\tradetempo\env\lib\site-packages\websockets\legacy\protocol.py", line 945, in transfer_data
+    message = await self.read_message()
+  File "C:\Users\allen\OneDrive\Documents\src\tradetempo\env\lib\site-packages\websockets\legacy\protocol.py", line 1015, in read_message
+    frame = await self.read_data_frame(max_size=self.max_size)
+  File "C:\Users\allen\OneDrive\Documents\src\tradetempo\env\lib\site-packages\websockets\legacy\protocol.py", line 1090, in read_data_frame
+    frame = await self.read_frame(max_size)
+  File "C:\Users\allen\OneDrive\Documents\src\tradetempo\env\lib\site-packages\websockets\legacy\protocol.py", line 1145, in read_frame
+    frame = await Frame.read(
+  File "C:\Users\allen\OneDrive\Documents\src\tradetempo\env\lib\site-packages\websockets\legacy\framing.py", line 70, in read
+    data = await reader(2)
+  File "C:\Users\allen\AppData\Local\Programs\Python\Python310\lib\asyncio\streams.py", line 697, in readexactly
+    raise self._exception
+  File "C:\Users\allen\AppData\Local\Programs\Python\Python310\lib\asyncio\proactor_events.py", line 301, in _loop_reading
+    self._read_fut = self._loop._proactor.recv_into(self._sock, self._data)
+  File "C:\Users\allen\AppData\Local\Programs\Python\Python310\lib\asyncio\windows_events.py", line 477, in recv_into
+    ov.WSARecvInto(conn.fileno(), buf, flags)
+ConnectionResetError: [WinError 10054] An existing connection was forcibly closed by the remote host
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\allen\AppData\Local\Programs\Python\Python310\lib\multiprocessing\process.py", line 315, in _bootstrap
+    self.run()
+  File "C:\Users\allen\AppData\Local\Programs\Python\Python310\lib\multiprocessing\process.py", line 108, in run
+    self._target(*self._args, **self._kwargs)
+  File "C:\Users\allen\OneDrive\Documents\src\tradetempo\tradetempo\wscwatch.py", line 193, in start_stream
+    asyncio.run(consume(DSN, subs_payload))
+  File "C:\Users\allen\AppData\Local\Programs\Python\Python310\lib\asyncio\runners.py", line 44, in run
+    return loop.run_until_complete(main)
+  File "C:\Users\allen\AppData\Local\Programs\Python\Python310\lib\asyncio\base_events.py", line 641, in run_until_complete
+    return future.result()
+  File "C:\Users\allen\OneDrive\Documents\src\tradetempo\tradetempo\wscwatch.py", line 170, in consume
+    await consumer_handler(websocket)
+  File "C:\Users\allen\OneDrive\Documents\src\tradetempo\tradetempo\wscwatch.py", line 149, in consumer_handler
+    async for message in websocket:
+  File "C:\Users\allen\OneDrive\Documents\src\tradetempo\env\lib\site-packages\websockets\legacy\protocol.py", line 482, in __aiter__
+    yield await self.recv()
+  File "C:\Users\allen\OneDrive\Documents\src\tradetempo\env\lib\site-packages\websockets\legacy\protocol.py", line 553, in recv
+    await self.ensure_open()
+  File "C:\Users\allen\OneDrive\Documents\src\tradetempo\env\lib\site-packages\websockets\legacy\protocol.py", line 921, in ensure_open
+    raise self.connection_closed_exc()
+websockets.exceptions.ConnectionClosedError: no close frame received or sent
+Future exception was never retrieved
+future: <Future finished exception=ConnectionClosedError(None, None, None)>
+websockets.exceptions.ConnectionClosedError: no close frame received or sent
+2022-08-04 01:23:58,322 - __main__ - INFO - Joining DYDX websocket process.
+
+----------------------------------------------
+
+2022-08-04 22:27:17,212 - tradetempo.wsdydx - DEBUG - insert_result.inserted_id: 62ec8e1545a705a1a5297a97
+/usr/local/lib/python3.9/asyncio/unix_events.py:140: RuntimeWarning: coroutine 'WebSocketCommonProtocol.close' was never awaited
+  del self._signal_handlers[sig]
+RuntimeWarning: Enable tracemalloc to get the object allocation traceback
+Process Process-1:
+Traceback (most recent call last):
+  File "/home/hunter/src/tradetempo/env/lib/python3.9/site-packages/websockets/legacy/protocol.py", line 956, in transfer_data
+    await asyncio.shield(self._put_message_waiter)
+asyncio.exceptions.CancelledError
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.9/multiprocessing/process.py", line 315, in _bootstrap
+    self.run()
+  File "/usr/local/lib/python3.9/multiprocessing/process.py", line 108, in run
+    self._target(*self._args, **self._kwargs)
+  File "/home/hunter/src/tradetempo/tradetempo/wscwatch.py", line 204, in start_stream
+    asyncio.run(consume(DSN, subs_payload))
+  File "/usr/local/lib/python3.9/asyncio/runners.py", line 44, in run
+    return loop.run_until_complete(main)
+  File "/usr/local/lib/python3.9/asyncio/base_events.py", line 647, in run_until_complete
+    return future.result()
+  File "/home/hunter/src/tradetempo/tradetempo/wscwatch.py", line 174, in consume
+    await consumer_handler(websocket)
+  File "/home/hunter/src/tradetempo/tradetempo/wscwatch.py", line 149, in consumer_handler
+    async for message in websocket:
+  File "/home/hunter/src/tradetempo/env/lib/python3.9/site-packages/websockets/legacy/protocol.py", line 482, in __aiter__
+    yield await self.recv()
+  File "/home/hunter/src/tradetempo/env/lib/python3.9/site-packages/websockets/legacy/protocol.py", line 553, in recv
+    await self.ensure_open()
+  File "/home/hunter/src/tradetempo/env/lib/python3.9/site-packages/websockets/legacy/protocol.py", line 930, in ensure_open
+    raise self.connection_closed_exc()
+websockets.exceptions.ConnectionClosedError: sent 1011 (unexpected error) keepalive ping timeout; no close frame received
+2022-08-04 22:27:20,573 - __main__ - INFO - Joining DYDX websocket process.
+2022-08-04 22:27:23,465 - tradetempo.wsdydx - DEBUG - insert_result.inserted_id: 62ec8e1b45a705a1a5297a98
+
+----------------------------------------
+
+2022-08-05 00:05:48,322 - tradetempo.wsdydx - DEBUG - insert_result.inserted_id: 62eca52c45a705a1a52981c7
+2022-08-05 00:05:48,324 - tradetempo.wsdydx - DEBUG - insert_result.inserted_id: 62eca52c45a705a1a52981c8
+2022-08-05 00:05:50,882 - tradetempo.wsdydx - DEBUG - insert_result.inserted_id: 62eca52e45a705a1a52981c9
+k2022-08-05 00:05:51,439 - tradetempo.wsdydx - DEBUG - insert_result.inserted_id: 62eca52f45a705a1a52981ca
+2022-08-05 00:05:51,645 - tradetempo.wsdydx - DEBUG - insert_result.inserted_id: 62eca52f45a705a1a52981cb
+2022-08-05 00:05:51,651 - tradetempo.wsdydx - DEBUG - insert_result.inserted_id: 62eca52f45a705a1a52981cc
+2022-08-05 00:05:52,591 - tradetempo.wsdydx - DEBUG - insert_result.inserted_id: 62eca53045a705a1a52981cd
+2022-08-05 00:05:56,795 - tradetempo.wsdydx - DEBUG - insert_result.inserted_id: 62eca53445a705a1a52981ce
+2022-08-05 00:06:21,856 - tradetempo.wsdydx - DEBUG - insert_result.inserted_id: 62eca54d45a705a1a52981cf
+2022-08-05 00:06:21,868 - tradetempo.wsdydx - DEBUG - insert_result.inserted_id: 62eca54d45a705a1a52981d0
+2022-08-05 00:06:21,886 - tradetempo.wsdydx - DEBUG - insert_result.inserted_id: 62eca54d45a705a1a52981d1
+2022-08-05 00:06:21,917 - tradetempo.wsdydx - DEBUG - insert_result.inserted_id: 62eca54d45a705a1a52981d2
+2022-08-05 00:06:21,919 - tradetempo.wsdydx - DEBUG - insert_result.inserted_id: 62eca54d45a705a1a52981d3
+2022-08-05 00:06:25,386 - tradetempo.wsdydx - DEBUG - insert_result.inserted_id: 62eca55145a705a1a52981d4
+2022-08-05 00:06:31,356 - tradetempo.wsdydx - DEBUG - insert_result.inserted_id: 62eca55745a705a1a52981d5
+2022-08-05 00:06:31,358 - tradetempo.wsdydx - DEBUG - insert_result.inserted_id: 62eca55745a705a1a52981d6
+2022-08-05 00:06:31,360 - tradetempo.wsdydx - DEBUG - insert_result.inserted_id: 62eca55745a705a1a52981d7
+^C2022-08-05 00:06:37,664 - __main__ - INFO - Exiting.
+Traceback (most recent call last):
+  File "/home/hunter/src/tradetempo/coordinator.py", line 64, in <module>
+    ws_dydx.join()
+  File "/usr/local/lib/python3.9/multiprocessing/process.py", line 149, in join
+    res = self._popen.wait(timeout)
+  File "/usr/local/lib/python3.9/multiprocessing/popen_fork.py", line 43, in wait
+    return self.poll(os.WNOHANG if timeout == 0.0 else 0)
+  File "/usr/local/lib/python3.9/multiprocessing/popen_fork.py", line 27, in poll
+    pid, sts = os.waitpid(self.pid, flag)
+KeyboardInterrupt
+2022-08-05 00:06:37,670 - tradetempo.wsdydx - ERROR - CancelledError raised: 
+Count = 1
+Traceback: Traceback (most recent call last):
+  File "/usr/local/lib/python3.9/asyncio/runners.py", line 44, in run
+    return loop.run_until_complete(main)
+  File "/usr/local/lib/python3.9/asyncio/base_events.py", line 634, in run_until_complete
+    self.run_forever()
+  File "/usr/local/lib/python3.9/asyncio/base_events.py", line 601, in run_forever
+    self._run_once()
+  File "/usr/local/lib/python3.9/asyncio/base_events.py", line 1869, in _run_once
+    event_list = self._selector.select(timeout)
+  File "/usr/local/lib/python3.9/selectors.py", line 469, in select
+    fd_event_list = self._selector.poll(timeout, max_ev)
+KeyboardInterrupt
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/hunter/src/tradetempo/tradetempo/wsdydx.py", line 109, in consume
+    await consumer_handler(websocket)
+  File "/home/hunter/src/tradetempo/tradetempo/wsdydx.py", line 92, in consumer_handler
+    async for message in websocket:
+  File "/home/hunter/src/tradetempo/env/lib/python3.9/site-packages/websockets/legacy/protocol.py", line 482, in __aiter__
+    yield await self.recv()
+  File "/home/hunter/src/tradetempo/env/lib/python3.9/site-packages/websockets/legacy/protocol.py", line 536, in recv
+    await asyncio.wait(
+  File "/usr/local/lib/python3.9/asyncio/tasks.py", line 413, in wait
+    return await _wait(fs, timeout, return_when, loop)
+  File "/usr/local/lib/python3.9/asyncio/tasks.py", line 525, in _wait
+    await waiter
+asyncio.exceptions.CancelledError
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.9/asyncio/runners.py", line 44, in run
+    return loop.run_until_complete(main)
+  File "/usr/local/lib/python3.9/asyncio/base_events.py", line 634, in run_until_complete
+    self.run_forever()
+  File "/usr/local/lib/python3.9/asyncio/base_events.py", line 601, in run_forever
+    self._run_once()
+  File "/usr/local/lib/python3.9/asyncio/base_events.py", line 1869, in _run_once
+    event_list = self._selector.select(timeout)
+  File "/usr/local/lib/python3.9/selectors.py", line 469, in select
+    fd_event_list = self._selector.poll(timeout, max_ev)
+KeyboardInterrupt
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/hunter/src/tradetempo/tradetempo/wsdydx.py", line 109, in consume
+    await consumer_handler(websocket)
+  File "/home/hunter/src/tradetempo/tradetempo/wsdydx.py", line 92, in consumer_handler
+    async for message in websocket:
+  File "/home/hunter/src/tradetempo/env/lib/python3.9/site-packages/websockets/legacy/protocol.py", line 482, in __aiter__
+    yield await self.recv()
+  File "/home/hunter/src/tradetempo/env/lib/python3.9/site-packages/websockets/legacy/protocol.py", line 536, in recv
+    await asyncio.wait(
+  File "/usr/local/lib/python3.9/asyncio/tasks.py", line 413, in wait
+    return await _wait(fs, timeout, return_when, loop)
+  File "/usr/local/lib/python3.9/asyncio/tasks.py", line 525, in _wait
+    await waiter
+asyncio.exceptions.CancelledError
+/usr/local/lib/python3.9/asyncio/unix_events.py:100: RuntimeWarning: coroutine 'WebSocketCommonProtocol.close' was never awaited
+  self._signal_handlers[sig] = handle
+RuntimeWarning: Enable tracemalloc to get the object allocation traceback
+2022-08-05 00:06:45,410 - tradetempo.wsdydx - DEBUG - insert_result.inserted_id: 62eca56545a705a1a52981d9
+2022-08-05 00:06:48,850 - tradetempo.wsdydx - DEBUG - insert_result.inserted_id: 62eca56845a705a1a52981da
+2022-08-05 00:07:05,922 - tradetempo.wsdydx - DEBUG - insert_result.inserted_id: 62eca57945a705a1a52981db
+2022-08-05 00:07:05,925 - tradetempo.wsdydx - DEBUG - insert_result.inserted_id: 62eca57945a705a1a52981dc
+2022-08-05 00:07:05,926 - tradetempo.wsdydx - DEBUG - insert_result.inserted_id: 62eca57945a705a1a52981dd
+2022-08-05 00:07:05,928 - tradetempo.wsdydx - DEBUG - insert_result.inserted_id: 62eca57945a705a1a52981de
+2022-08-05 00:07:05,947 - tradetempo.wsdydx - DEBUG - insert_result.inserted_id: 62eca57945a705a1a52981df
+2022-08-05 00:07:06,121 - tradetempo.wsdydx - DEBUG - insert_result.inserted_id: 62eca57a45a705a1a52981e0
+2022-08-05 00:07:06,143 - tradetempo.wsdydx - DEBUG - insert_result.inserted_id: 62eca57a45a705a1a52981e1
+2022-08-05 00:07:06,167 - tradetempo.wsdydx - DEBUG - insert_result.inserted_id: 62eca57a45a705a1a52981e2
+2022-08-05 00:07:06,169 - tradetempo.wsdydx - DEBUG - insert_result.inserted_id: 62eca57a45a705a1a52981e3
+2022-08-05 00:07:06,247 - tradetempo.wsdydx - DEBUG - insert_result.inserted_id: 62eca57a45a705a1a52981e4
+2022-08-05 00:07:07,155 - tradetempo.wsdydx - DEBUG - insert_result.inserted_id: 62eca57b45a705a1a52981e5
+2022-08-05 00:07:16,701 - tradetempo.wsdydx - DEBUG - insert_result.inserted_id: 62eca58445a705a1a52981e6
+2022-08-05 00:07:22,650 - tradetempo.wsdydx - DEBUG - insert_result.inserted_id: 62eca58a45a705a1a52981e7
+2022-08-05 00:07:22,651 - tradetempo.wsdydx - DEBUG - insert_result.inserted_id: 62eca58a45a705a1a52981e8
+2022-08-05 00:07:23,051 - tradetempo.wsdydx - DEBUG - insert_result.inserted_id: 62eca58b45a705a1a52981e9
+2022-08-05 00:07:24,371 - tradetempo.wsdydx - DEBUG - insert_result.inserted_id: 62eca58c45a705a1a52981ea
+^CError in atexit._run_exitfuncs:
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.9/multiprocessing/popen_fork.py", line 27, in poll
+    pid, sts = os.waitpid(self.pid, flag)
+KeyboardInterrupt
+/usr/local/lib/python3.9/asyncio/unix_events.py:140: RuntimeWarning: coroutine 'WebSocketCommonProtocol.close' was never awaited
+  del self._signal_handlers[sig]
+RuntimeWarning: Enable tracemalloc to get the object allocation traceback
+2022-08-05 00:07:25,874 - tradetempo.wsdydx - INFO - Exit signal received.
