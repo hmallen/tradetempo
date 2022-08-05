@@ -8,6 +8,7 @@ import os
 import signal
 import sys
 import time
+import traceback
 
 import websockets
 
@@ -19,13 +20,17 @@ os.chdir(sys.path[0])
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
+formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+
 stream_handler = logging.StreamHandler()
 stream_handler.setLevel(logging.DEBUG)
-
-formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 stream_handler.setFormatter(formatter)
-
 logger.addHandler(stream_handler)
+
+file_handler = logging.FileHandler("logs/wsdydx.log")
+file_handler.setLevel(logging.ERROR)
+file_handler.setFormatter(formatter)
+logger.addHandler(file_handler)
 
 config_path = "settings.cfg"
 config = configparser.RawConfigParser()
@@ -77,29 +82,38 @@ async def consumer_handler(websocket: websockets.WebSocketClientProtocol):
         port=int(config["mongodb"]["port"]),
         directConnection=True,
     )[config["mongodb"]["db"]]
-    
+
     loop = asyncio.get_running_loop()
     try:
         loop.add_signal_handler(signal.SIGTERM, loop.create_task, websocket.close())
     except NotImplementedError:
-        logger.warning('Windows sucks and won\'t add the signal handler.')
+        logger.warning("Windows sucks and won't add the signal handler.")
 
     async for message in websocket:
-        try:
-            trade_json = json.loads(message)
+        # try:
+        trade_json = json.loads(message)
 
-            if trade_json["type"] == "channel_data":
-                await asyncio.create_task(process_trade(trade_message=trade_json))
+        if trade_json["type"] == "channel_data":
+            await asyncio.create_task(process_trade(trade_message=trade_json))
 
-        except asyncio.CancelledError:
-            logger.debug("CancelledError raised.")
-            break
+        # except asyncio.CancelledError:
+        #     logger.debug("CancelledError raised.")
+        #     break
 
 
 async def consume(subscription_request):
-    async with websockets.connect(WS_HOST_MAINNET) as websocket:
-        await websocket.send(json.dumps(subscription_request))
-        await consumer_handler(websocket)
+    exception_count = 0
+    async for websocket in websockets.connect(WS_HOST_MAINNET, compression=None):
+        try:
+            await websocket.send(json.dumps(subscription_request))
+            await consumer_handler(websocket)
+
+        except asyncio.CancelledError as e:
+            exception_count += 1
+            logger.exception(
+                f"CancelledError raised: {e}\nCount = {exception_count}\nTraceback: {traceback.format_exc()}"
+            )
+            continue
 
 
 def start_stream(asset):

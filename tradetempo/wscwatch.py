@@ -34,13 +34,17 @@ os.chdir(sys.path[0])
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
+formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+
 stream_handler = logging.StreamHandler()
 stream_handler.setLevel(logging.DEBUG)
-
-formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 stream_handler.setFormatter(formatter)
-
 logger.addHandler(stream_handler)
+
+file_handler = logging.FileHandler("logs/wscwatch.log")
+file_handler.setLevel(logging.ERROR)
+file_handler.setFormatter(formatter)
+logger.addHandler(file_handler)
 
 config = configparser.RawConfigParser()
 config.read(".credentials.cfg")
@@ -140,30 +144,41 @@ async def consumer_handler(websocket: websockets.WebSocketClientProtocol):
     try:
         loop.add_signal_handler(signal.SIGTERM, loop.create_task, websocket.close())
     except NotImplementedError:
-        logger.warning('Windows sucks and won\'t add the signal handler.')
+        logger.warning("Windows sucks and won't add the signal handler.")
 
     async for message in websocket:
-        try:
-            await asyncio.create_task(message_router(message))
+        # try:
+        await asyncio.create_task(message_router(message))
 
-        except asyncio.CancelledError:
-            logger.debug("CancelledError raised.")
-            continue
+        # except asyncio.CancelledError:
+        #     logger.debug("CancelledError raised.")
+        #     continue
 
         # except KeyboardInterrupt:
         #     logger.info('Exit signal received.')
         #     break
+        #
+        # Cleanup?? --> Tasks, Loop, Mongo, Signals
 
 
 async def consume(ws_url, subs_payload):
-    async with websockets.connect(ws_url) as websocket:
-        logger.debug(
-            "Connection established. Sending subscriptions payload: {}".format(
-                subs_payload
+    exception_count = 0
+    async for websocket in websockets.connect(ws_url, compression=None):
+        try:
+            logger.debug(
+                "Connection established. Sending subscriptions payload: {}".format(
+                    subs_payload
+                )
             )
-        )
-        await websocket.send(subs_payload)
-        await consumer_handler(websocket)
+            await websocket.send(subs_payload)
+            await consumer_handler(websocket)
+
+        except asyncio.CancelledError as e:
+            exception_count += 1
+            logger.exception(
+                f"CancelledError raised: {e}\nCount = {exception_count}\nTraceback: {traceback.format_exc()}"
+            )
+            continue
 
 
 def start_stream(assets, count):

@@ -3,3 +3,4 @@ testing/test_user.json
 *pycache*
 *.pyc
 .vscode/
+logs/*.log
