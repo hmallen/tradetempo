@@ -21,6 +21,8 @@ import traceback
 from google import protobuf
 from google.protobuf.json_format import MessageToJson
 
+import functools
+
 # from cryptowatch.utils import log
 from cryptowatch.errors import APIKeyError
 from cryptowatch.utils import forge_stream_subscription_payload
@@ -28,6 +30,9 @@ from cryptowatch.stream.proto.public.stream import stream_pb2
 from cryptowatch.stream.proto.public.client import client_pb2
 
 from tradetempo.cwatchhelper import MarketInfo
+
+import uvloop
+asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
 
 os.chdir(sys.path[0])
 
@@ -41,8 +46,8 @@ stream_handler.setLevel(logging.DEBUG)
 stream_handler.setFormatter(formatter)
 logger.addHandler(stream_handler)
 
-file_handler = logging.FileHandler("logs/wscwatch.log")
-file_handler.setLevel(logging.ERROR)
+file_handler = logging.FileHandler("logs/wscwatchsimplified.log")
+file_handler.setLevel(logging.INFO)
 file_handler.setFormatter(formatter)
 logger.addHandler(file_handler)
 
@@ -59,20 +64,57 @@ async def message_router(message):
         if message == b"\x01":
             logger.debug(f"Heartbeat received: {message}")
             return
+        
+        global _db
 
         stream_message = stream_pb2.StreamMessage()
         stream_message.ParseFromString(message)
 
         if str(stream_message.marketUpdate.intervalsUpdate):
-            await intervals_update(stream_message)
+            logger.debug('INTERVALS UPDATE')
+
         elif str(stream_message.marketUpdate.tradesUpdate):
-            await trades_update(json.loads(MessageToJson(stream_message)))
+            trades_update = json.loads(MessageToJson(stream_message))
+
+            received_timestamp = time.time_ns()
+            exchange_id = Int64(trades_update["marketUpdate"]["market"]["exchangeId"])
+            market_id = Int64(trades_update["marketUpdate"]["market"]["marketId"])
+            currency_pair_id = Int64(trades_update["marketUpdate"]["market"]["currencyPairId"])
+
+            for trade in trades_update["marketUpdate"]["tradesUpdate"]["trades"]:
+                trade_formatted = {
+                    "receivedTimestamp": received_timestamp,
+                    "exchangeId": exchange_id,
+                    "marketId": market_id,
+                    "currencyPairId": currency_pair_id,
+                    # "market": XYZ,
+                    # "exchange": XYZ,
+                    # "base": XYZ,
+                    # "quote": XYZ,
+                    "side": trade["orderSide"].rstrip("SIDE").lower(),
+                    "price": Decimal128(trade["priceStr"]),
+                    "amount": Decimal128(trade["amountStr"]),
+                    "timestamp": datetime.datetime.fromtimestamp(int(trade["timestamp"])),
+                    "timestampNano": Int64(trade["timestampNano"]),
+                    "priceStr": trade["priceStr"],
+                    "amountStr": trade["amountStr"],
+                    "externalId": trade["externalId"],
+                }
+
+                insert_result = await _db[config["mongodb"]["collection"]].insert_one(
+                    trade_formatted
+                )
+                logger.debug(f"insert_result.inserted_id: {insert_result.inserted_id}")
+
         elif str(stream_message.marketUpdate.orderBookUpdate):
-            await orderbook_snapshot_update(stream_message)
+            logger.debug('ORDERBOOK UPDATE')
+
         elif str(stream_message.marketUpdate.orderBookDeltaUpdate):
-            await orderbook_delta_update(stream_message)
+            logger.debug('ORDERBOOK DELTA UPDATE')
+
         elif str(stream_message.marketUpdate.orderBookSpreadUpdate):
-            await orderbook_spread_update(stream_message)
+            logger.debug('ORDERBOOK SPREAD UPDATE')
+
         else:
             logger.debug(stream_message)
 
@@ -83,55 +125,6 @@ async def message_router(message):
         logger.error(traceback.format_exc())
 
 
-async def trades_update(trades_update):
-    received_timestamp = time.time_ns()
-    exchange_id = Int64(trades_update["marketUpdate"]["market"]["exchangeId"])
-    market_id = Int64(trades_update["marketUpdate"]["market"]["marketId"])
-    currency_pair_id = Int64(trades_update["marketUpdate"]["market"]["currencyPairId"])
-
-    for trade in trades_update["marketUpdate"]["tradesUpdate"]["trades"]:
-        trade_formatted = {
-            "receivedTimestamp": received_timestamp,
-            "exchangeId": exchange_id,
-            "marketId": market_id,
-            "currencyPairId": currency_pair_id,
-            # "market": XYZ,
-            # "exchange": XYZ,
-            # "base": XYZ,
-            # "quote": XYZ,
-            "side": trade["orderSide"].rstrip("SIDE").lower(),
-            "price": Decimal128(trade["priceStr"]),
-            "amount": Decimal128(trade["amountStr"]),
-            "timestamp": datetime.datetime.fromtimestamp(int(trade["timestamp"])),
-            "timestampNano": Int64(trade["timestampNano"]),
-            "priceStr": trade["priceStr"],
-            "amountStr": trade["amountStr"],
-            "externalId": trade["externalId"],
-        }
-
-        global _db
-        insert_result = await _db[config["mongodb"]["collection"]].insert_one(
-            trade_formatted
-        )
-        logger.debug(f"insert_result.inserted_id: {insert_result.inserted_id}")
-
-
-async def intervals_update(intervals_update):
-    pass
-
-
-async def orderbook_spread_update(orderbook_spread_update):
-    pass
-
-
-async def orderbook_delta_update(orderbook_delta_update):
-    pass
-
-
-async def orderbook_snapshot_update(orderbook_snapshot_update):
-    pass
-
-
 async def consumer_handler(websocket: websockets.WebSocketClientProtocol):
     global _db
     _db = AsyncIOMotorClient(
@@ -140,31 +133,15 @@ async def consumer_handler(websocket: websockets.WebSocketClientProtocol):
         directConnection=True,
     )[config["mongodb"]["db"]]
 
-    try:
-        loop = asyncio.get_running_loop()
-        stop = loop.create_future()
-        loop.add_signal_handler(signal.SIGTERM, stop.set_result, None)
-    except NotImplementedError:
-        logger.warning("Windows sucks and won't add the signal handler.")
-
     async for message in websocket:
-        # try:
-        # asyncio.create_task(message_router(message))
         await message_router(message)
-
-        # except asyncio.CancelledError:
-        #     logger.debug("CancelledError raised.")
-        #     continue
-
-        # except KeyboardInterrupt:
-        #     logger.info('Exit signal received.')
-        #     break
-        #
-        # Cleanup?? --> Tasks, Loop, Mongo, Signals
 
 
 async def consume(ws_url, subs_payload):
-    exception_count = 0
+    loop = asyncio.get_running_loop()
+    loop.add_signal_handler(
+        signal.SIGTERM, functools.partial(stop_stream, signal.SIGTERM, loop))
+    
     async for websocket in websockets.connect(ws_url, compression=None):
         try:
             logger.debug(
@@ -174,13 +151,15 @@ async def consume(ws_url, subs_payload):
             )
             await websocket.send(subs_payload)
             await consumer_handler(websocket)
-
-        except asyncio.exceptions.CancelledError as e:
-            exception_count += 1
-            logger.exception(
-                f"CancelledError raised: {e}\nCount = {exception_count}\nTraceback: {traceback.format_exc()}"
-            )
+        
+        except websockets.ConnectionClosed:
+            logger.debug('Continuing after encountering websockets.ConnectionClosed.')
             continue
+
+
+def stop_stream(signame, loop):
+    logger.debug(f"Got signal {signame}. Stopping event loop.")
+    loop.stop()
 
 
 def start_stream(assets, count):
@@ -202,11 +181,11 @@ def start_stream(assets, count):
     subs_payload = forge_stream_subscription_payload(subscription_list, client_pb2)
     logger.debug(f"subs_payload: {subs_payload}")
 
-    # try:
-    asyncio.run(consume(DSN, subs_payload))
-
-    # except KeyboardInterrupt:
-    #     logger.info("Exit signal received.")
+    try:
+        asyncio.run(consume(DSN, subs_payload))
+    
+    except KeyboardInterrupt:
+        logger.info("Exit signal received.")
 
 
 if __name__ == "__main__":
