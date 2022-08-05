@@ -8,7 +8,7 @@ import os
 import signal
 import sys
 import time
-import traceback
+import functools
 
 import websockets
 
@@ -85,39 +85,37 @@ async def consumer_handler(websocket: websockets.WebSocketClientProtocol):
         port=int(config["mongodb"]["port"]),
         directConnection=True,
     )[config["mongodb"]["db"]]
-
-    try:
-        loop = asyncio.get_running_loop()
-        loop.add_signal_handler(signal.SIGTERM, loop.create_task, websocket.close())
-    except NotImplementedError:
-        logger.warning("Windows sucks and won't add the signal handler.")
-
+    
     async for message in websocket:
-        # try:
         trade_json = json.loads(message)
 
         if trade_json["type"] == "channel_data":
             asyncio.create_task(process_trade(trade_message=trade_json))
 
-        # except asyncio.CancelledError:
-        #     logger.debug("CancelledError raised.")
-        #     break
-
 
 async def consume(subscription_request):
-    exception_count = 0
+    loop = asyncio.get_running_loop()
+    loop.add_signal_handler(
+        signal.SIGTERM, functools.partial(stop_stream, signal.SIGTERM, loop))
+
     async for websocket in websockets.connect(WS_HOST_MAINNET, compression=None):
         try:
+            logger.debug(
+                "Connection established. Sending subscription request: {}".format(
+                    subscription_request
+                )
+            )
             await websocket.send(json.dumps(subscription_request))
             await consumer_handler(websocket)
-
-        except asyncio.CancelledError as e:
-            exception_count += 1
-            logger.exception(
-                f"CancelledError raised: {e}\nCount = {exception_count}\nTraceback: {traceback.format_exc()}"
-            )
+        
+        except websockets.ConnectionClosed:
+            logger.debug('Continuing after encountering websockets.ConnectionClosed.')
             continue
 
+
+def stop_stream(signame, loop):
+    logger.debug(f"Got signal {signame}. Stopping event loop.")
+    loop.stop()
 
 def start_stream(asset):
     ws_request = {

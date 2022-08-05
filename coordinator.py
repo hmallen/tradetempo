@@ -32,41 +32,41 @@ config.read(config_path)
 
 
 if __name__ == "__main__":
-    try:
-        monitored_assets = {
-            "cryptowatch": [
-                val.strip(" ")
-                for val in config["cryptowatch"]["monitored_assets"].split(",")
-            ],
-            "dydx": config["dydx"]["monitored_assets"],
-        }
-        logger.debug(f"monitored_assets: {monitored_assets}")
+    # try:
+    monitored_assets = {
+        "cryptowatch": [
+            val.strip(" ")
+            for val in config["cryptowatch"]["monitored_assets"].split(",")
+        ],
+        "dydx": config["dydx"]["monitored_assets"],
+    }
+    logger.debug(f"monitored_assets: {monitored_assets}")
 
-        ws_cwatch = Process(
-            target=tradetempo.wscwatchsimplified.start_stream,
-            args=(
-                monitored_assets["cryptowatch"],
-                config["cryptowatch"]["subscription_count"],
-            ),
-        )
-        ws_dydx = Process(
-            target=tradetempo.wsdydx.start_stream, args=(monitored_assets["dydx"],)
-        )
+    ws_cwatch = Process(
+        target=tradetempo.wscwatchsimplified.start_stream,
+        args=(
+            monitored_assets["cryptowatch"],
+            config["cryptowatch"]["subscription_count"],
+        ),
+    )
+    ws_dydx = Process(
+        target=tradetempo.wsdydx.start_stream, args=(monitored_assets["dydx"],)
+    )
 
-        logger.info("Starting Cryptowatch websocket process.")
-        ws_cwatch.start()
-        logger.info("Starting DYDX websocket process.")
-        ws_dydx.start()
+    logger.info("Starting Cryptowatch websocket process.")
+    ws_cwatch.start()
+    logger.info("Starting DYDX websocket process.")
+    ws_dydx.start()
 
-        logger.info("Joining Cryptowatch websocket process.")
-        ws_cwatch.join()
-        logger.info("Joining DYDX websocket process.")
-        ws_dydx.join()
+    logger.info("Joining Cryptowatch websocket process.")
+    ws_cwatch.join()
+    logger.info("Joining DYDX websocket process.")
+    ws_dydx.join()
 
-        logger.info("Processes stopped.")
+    logger.info("Processes stopped.")
 
-    except Exception as e:
-        logger.exception(traceback.format_exc())
+    # except Exception as e:
+    #     logger.exception(traceback.format_exc())
 
-    finally:
-        logger.info("Exiting.")
+    # finally:
+    #     logger.info("Exiting.")
