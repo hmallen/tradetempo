@@ -1,0 +1,62 @@
+2022-08-04 14:40:16,875 - tradetempo.wscwatch - ERROR - CancelledError raised: 
+Count = 1
+Traceback: Traceback (most recent call last):
+  File "/usr/local/lib/python3.9/asyncio/runners.py", line 44, in run
+    return loop.run_until_complete(main)
+  File "/usr/local/lib/python3.9/asyncio/base_events.py", line 634, in run_until_complete
+    self.run_forever()
+  File "/usr/local/lib/python3.9/asyncio/base_events.py", line 601, in run_forever
+    self._run_once()
+  File "/usr/local/lib/python3.9/asyncio/base_events.py", line 1869, in _run_once
+    event_list = self._selector.select(timeout)
+  File "/usr/local/lib/python3.9/selectors.py", line 469, in select
+    fd_event_list = self._selector.poll(timeout, max_ev)
+KeyboardInterrupt
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/hunter/src/tradetempo/tradetempo/wscwatch.py", line 69, in message_router
+    await trades_update(json.loads(MessageToJson(stream_message)))
+  File "/home/hunter/src/tradetempo/tradetempo/wscwatch.py", line 113, in trades_update
+    insert_result = await _db[config["mongodb"]["collection"]].insert_one(
+asyncio.exceptions.CancelledError
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/hunter/src/tradetempo/tradetempo/wscwatch.py", line 174, in consume
+    await consumer_handler(websocket)
+  File "/home/hunter/src/tradetempo/tradetempo/wscwatch.py", line 151, in consumer_handler
+    await asyncio.create_task(message_router(message))
+asyncio.exceptions.CancelledError
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.9/asyncio/runners.py", line 44, in run
+    return loop.run_until_complete(main)
+  File "/usr/local/lib/python3.9/asyncio/base_events.py", line 634, in run_until_complete
+    self.run_forever()
+  File "/usr/local/lib/python3.9/asyncio/base_events.py", line 601, in run_forever
+    self._run_once()
+  File "/usr/local/lib/python3.9/asyncio/base_events.py", line 1869, in _run_once
+    event_list = self._selector.select(timeout)
+  File "/usr/local/lib/python3.9/selectors.py", line 469, in select
+    fd_event_list = self._selector.poll(timeout, max_ev)
+KeyboardInterrupt
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/hunter/src/tradetempo/tradetempo/wscwatch.py", line 69, in message_router
+    await trades_update(json.loads(MessageToJson(stream_message)))
+  File "/home/hunter/src/tradetempo/tradetempo/wscwatch.py", line 113, in trades_update
+    insert_result = await _db[config["mongodb"]["collection"]].insert_one(
+asyncio.exceptions.CancelledError
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/hunter/src/tradetempo/tradetempo/wscwatch.py", line 174, in consume
+    await consumer_handler(websocket)
+  File "/home/hunter/src/tradetempo/tradetempo/wscwatch.py", line 151, in consumer_handler
+    await asyncio.create_task(message_router(message))
+asyncio.exceptions.CancelledError

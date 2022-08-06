@@ -58,15 +58,24 @@ if __name__ == "__main__":
     logger.info("Starting DYDX websocket process.")
     ws_dydx.start()
 
-    logger.info("Joining Cryptowatch websocket process.")
-    ws_cwatch.join()
-    logger.info("Joining DYDX websocket process.")
-    ws_dydx.join()
+    try:
+        logger.info("Joining Cryptowatch websocket process.")
+        ws_cwatch.join()
+        logger.info("Joining DYDX websocket process.")
+        ws_dydx.join()
 
-    logger.info("Processes stopped.")
+        logger.info("Processes stopped.")
 
-    # except Exception as e:
-    #     logger.exception(traceback.format_exc())
+    except KeyboardInterrupt:
+        logger.info("Exit signal received.")
 
-    # finally:
-    #     logger.info("Exiting.")
+    except Exception as e:
+        logger.exception(traceback.format_exc())
+
+    finally:
+        logger.info("Joining Cryptowatch websocket process.")
+        ws_cwatch.join()
+        logger.info("Joining DYDX websocket process.")
+        ws_dydx.join()
+
+        logger.info("Processes stopped. Exiting.")

@@ -1,0 +1,247 @@
+2022-08-04 14:40:16,875 - tradetempo.wsdydx - ERROR - CancelledError raised: 
+Count = 1
+Traceback: Traceback (most recent call last):
+  File "/usr/local/lib/python3.9/asyncio/runners.py", line 44, in run
+    return loop.run_until_complete(main)
+  File "/usr/local/lib/python3.9/asyncio/base_events.py", line 634, in run_until_complete
+    self.run_forever()
+  File "/usr/local/lib/python3.9/asyncio/base_events.py", line 601, in run_forever
+    self._run_once()
+  File "/usr/local/lib/python3.9/asyncio/base_events.py", line 1869, in _run_once
+    event_list = self._selector.select(timeout)
+  File "/usr/local/lib/python3.9/selectors.py", line 469, in select
+    fd_event_list = self._selector.poll(timeout, max_ev)
+KeyboardInterrupt
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/hunter/src/tradetempo/tradetempo/wsdydx.py", line 109, in consume
+    await consumer_handler(websocket)
+  File "/home/hunter/src/tradetempo/tradetempo/wsdydx.py", line 92, in consumer_handler
+    async for message in websocket:
+  File "/home/hunter/src/tradetempo/env/lib/python3.9/site-packages/websockets/legacy/protocol.py", line 482, in __aiter__
+    yield await self.recv()
+  File "/home/hunter/src/tradetempo/env/lib/python3.9/site-packages/websockets/legacy/protocol.py", line 536, in recv
+    await asyncio.wait(
+  File "/usr/local/lib/python3.9/asyncio/tasks.py", line 413, in wait
+    return await _wait(fs, timeout, return_when, loop)
+  File "/usr/local/lib/python3.9/asyncio/tasks.py", line 525, in _wait
+    await waiter
+asyncio.exceptions.CancelledError
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.9/asyncio/runners.py", line 44, in run
+    return loop.run_until_complete(main)
+  File "/usr/local/lib/python3.9/asyncio/base_events.py", line 634, in run_until_complete
+    self.run_forever()
+  File "/usr/local/lib/python3.9/asyncio/base_events.py", line 601, in run_forever
+    self._run_once()
+  File "/usr/local/lib/python3.9/asyncio/base_events.py", line 1869, in _run_once
+    event_list = self._selector.select(timeout)
+  File "/usr/local/lib/python3.9/selectors.py", line 469, in select
+    fd_event_list = self._selector.poll(timeout, max_ev)
+KeyboardInterrupt
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/hunter/src/tradetempo/tradetempo/wsdydx.py", line 109, in consume
+    await consumer_handler(websocket)
+  File "/home/hunter/src/tradetempo/tradetempo/wsdydx.py", line 92, in consumer_handler
+    async for message in websocket:
+  File "/home/hunter/src/tradetempo/env/lib/python3.9/site-packages/websockets/legacy/protocol.py", line 482, in __aiter__
+    yield await self.recv()
+  File "/home/hunter/src/tradetempo/env/lib/python3.9/site-packages/websockets/legacy/protocol.py", line 536, in recv
+    await asyncio.wait(
+  File "/usr/local/lib/python3.9/asyncio/tasks.py", line 413, in wait
+    return await _wait(fs, timeout, return_when, loop)
+  File "/usr/local/lib/python3.9/asyncio/tasks.py", line 525, in _wait
+    await waiter
+asyncio.exceptions.CancelledError
+2022-08-05 00:06:37,670 - tradetempo.wsdydx - ERROR - CancelledError raised: 
+Count = 1
+Traceback: Traceback (most recent call last):
+  File "/usr/local/lib/python3.9/asyncio/runners.py", line 44, in run
+    return loop.run_until_complete(main)
+  File "/usr/local/lib/python3.9/asyncio/base_events.py", line 634, in run_until_complete
+    self.run_forever()
+  File "/usr/local/lib/python3.9/asyncio/base_events.py", line 601, in run_forever
+    self._run_once()
+  File "/usr/local/lib/python3.9/asyncio/base_events.py", line 1869, in _run_once
+    event_list = self._selector.select(timeout)
+  File "/usr/local/lib/python3.9/selectors.py", line 469, in select
+    fd_event_list = self._selector.poll(timeout, max_ev)
+KeyboardInterrupt
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/hunter/src/tradetempo/tradetempo/wsdydx.py", line 109, in consume
+    await consumer_handler(websocket)
+  File "/home/hunter/src/tradetempo/tradetempo/wsdydx.py", line 92, in consumer_handler
+    async for message in websocket:
+  File "/home/hunter/src/tradetempo/env/lib/python3.9/site-packages/websockets/legacy/protocol.py", line 482, in __aiter__
+    yield await self.recv()
+  File "/home/hunter/src/tradetempo/env/lib/python3.9/site-packages/websockets/legacy/protocol.py", line 536, in recv
+    await asyncio.wait(
+  File "/usr/local/lib/python3.9/asyncio/tasks.py", line 413, in wait
+    return await _wait(fs, timeout, return_when, loop)
+  File "/usr/local/lib/python3.9/asyncio/tasks.py", line 525, in _wait
+    await waiter
+asyncio.exceptions.CancelledError
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.9/asyncio/runners.py", line 44, in run
+    return loop.run_until_complete(main)
+  File "/usr/local/lib/python3.9/asyncio/base_events.py", line 634, in run_until_complete
+    self.run_forever()
+  File "/usr/local/lib/python3.9/asyncio/base_events.py", line 601, in run_forever
+    self._run_once()
+  File "/usr/local/lib/python3.9/asyncio/base_events.py", line 1869, in _run_once
+    event_list = self._selector.select(timeout)
+  File "/usr/local/lib/python3.9/selectors.py", line 469, in select
+    fd_event_list = self._selector.poll(timeout, max_ev)
+KeyboardInterrupt
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/hunter/src/tradetempo/tradetempo/wsdydx.py", line 109, in consume
+    await consumer_handler(websocket)
+  File "/home/hunter/src/tradetempo/tradetempo/wsdydx.py", line 92, in consumer_handler
+    async for message in websocket:
+  File "/home/hunter/src/tradetempo/env/lib/python3.9/site-packages/websockets/legacy/protocol.py", line 482, in __aiter__
+    yield await self.recv()
+  File "/home/hunter/src/tradetempo/env/lib/python3.9/site-packages/websockets/legacy/protocol.py", line 536, in recv
+    await asyncio.wait(
+  File "/usr/local/lib/python3.9/asyncio/tasks.py", line 413, in wait
+    return await _wait(fs, timeout, return_when, loop)
+  File "/usr/local/lib/python3.9/asyncio/tasks.py", line 525, in _wait
+    await waiter
+asyncio.exceptions.CancelledError
+2022-08-05 03:25:27,699 - tradetempo.wsdydx - ERROR - CancelledError raised: 
+Count = 1
+Traceback: Traceback (most recent call last):
+  File "/usr/local/lib/python3.9/asyncio/runners.py", line 44, in run
+    return loop.run_until_complete(main)
+  File "/usr/local/lib/python3.9/asyncio/base_events.py", line 634, in run_until_complete
+    self.run_forever()
+  File "/usr/local/lib/python3.9/asyncio/base_events.py", line 601, in run_forever
+    self._run_once()
+  File "/usr/local/lib/python3.9/asyncio/base_events.py", line 1869, in _run_once
+    event_list = self._selector.select(timeout)
+  File "/usr/local/lib/python3.9/selectors.py", line 469, in select
+    fd_event_list = self._selector.poll(timeout, max_ev)
+KeyboardInterrupt
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/hunter/src/tradetempo/tradetempo/wsdydx.py", line 109, in consume
+    await consumer_handler(websocket)
+  File "/home/hunter/src/tradetempo/tradetempo/wsdydx.py", line 92, in consumer_handler
+    async for message in websocket:
+  File "/home/hunter/src/tradetempo/env/lib/python3.9/site-packages/websockets/legacy/protocol.py", line 482, in __aiter__
+    yield await self.recv()
+  File "/home/hunter/src/tradetempo/env/lib/python3.9/site-packages/websockets/legacy/protocol.py", line 536, in recv
+    await asyncio.wait(
+  File "/usr/local/lib/python3.9/asyncio/tasks.py", line 413, in wait
+    return await _wait(fs, timeout, return_when, loop)
+  File "/usr/local/lib/python3.9/asyncio/tasks.py", line 525, in _wait
+    await waiter
+asyncio.exceptions.CancelledError
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.9/asyncio/runners.py", line 44, in run
+    return loop.run_until_complete(main)
+  File "/usr/local/lib/python3.9/asyncio/base_events.py", line 634, in run_until_complete
+    self.run_forever()
+  File "/usr/local/lib/python3.9/asyncio/base_events.py", line 601, in run_forever
+    self._run_once()
+  File "/usr/local/lib/python3.9/asyncio/base_events.py", line 1869, in _run_once
+    event_list = self._selector.select(timeout)
+  File "/usr/local/lib/python3.9/selectors.py", line 469, in select
+    fd_event_list = self._selector.poll(timeout, max_ev)
+KeyboardInterrupt
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/hunter/src/tradetempo/tradetempo/wsdydx.py", line 109, in consume
+    await consumer_handler(websocket)
+  File "/home/hunter/src/tradetempo/tradetempo/wsdydx.py", line 92, in consumer_handler
+    async for message in websocket:
+  File "/home/hunter/src/tradetempo/env/lib/python3.9/site-packages/websockets/legacy/protocol.py", line 482, in __aiter__
+    yield await self.recv()
+  File "/home/hunter/src/tradetempo/env/lib/python3.9/site-packages/websockets/legacy/protocol.py", line 536, in recv
+    await asyncio.wait(
+  File "/usr/local/lib/python3.9/asyncio/tasks.py", line 413, in wait
+    return await _wait(fs, timeout, return_when, loop)
+  File "/usr/local/lib/python3.9/asyncio/tasks.py", line 525, in _wait
+    await waiter
+asyncio.exceptions.CancelledError
+2022-08-05 03:25:29,162 - tradetempo.wsdydx - INFO - Exit signal received.
+2022-08-05 03:28:28,429 - tradetempo.wsdydx - ERROR - CancelledError raised: 
+Count = 1
+Traceback: Traceback (most recent call last):
+  File "/usr/local/lib/python3.9/asyncio/runners.py", line 44, in run
+    return loop.run_until_complete(main)
+  File "uvloop/loop.pyx", line 1495, in uvloop.loop.Loop.run_until_complete
+  File "uvloop/loop.pyx", line 1488, in uvloop.loop.Loop.run_until_complete
+  File "uvloop/loop.pyx", line 1377, in uvloop.loop.Loop.run_forever
+  File "uvloop/loop.pyx", line 550, in uvloop.loop.Loop._run
+  File "uvloop/handles/poll.pyx", line 213, in uvloop.loop.__on_uvpoll_event
+  File "uvloop/cbhandles.pyx", line 83, in uvloop.loop.Handle._run
+  File "uvloop/cbhandles.pyx", line 66, in uvloop.loop.Handle._run
+  File "uvloop/loop.pyx", line 390, in uvloop.loop.Loop._read_from_self
+  File "uvloop/loop.pyx", line 395, in uvloop.loop.Loop._invoke_signals
+  File "uvloop/loop.pyx", line 370, in uvloop.loop.Loop._ceval_process_signals
+KeyboardInterrupt
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/hunter/src/tradetempo/tradetempo/wsdydx.py", line 109, in consume
+    await consumer_handler(websocket)
+  File "/home/hunter/src/tradetempo/tradetempo/wsdydx.py", line 92, in consumer_handler
+    async for message in websocket:
+  File "/home/hunter/src/tradetempo/env/lib/python3.9/site-packages/websockets/legacy/protocol.py", line 482, in __aiter__
+    yield await self.recv()
+  File "/home/hunter/src/tradetempo/env/lib/python3.9/site-packages/websockets/legacy/protocol.py", line 536, in recv
+    await asyncio.wait(
+  File "/usr/local/lib/python3.9/asyncio/tasks.py", line 413, in wait
+    return await _wait(fs, timeout, return_when, loop)
+  File "/usr/local/lib/python3.9/asyncio/tasks.py", line 525, in _wait
+    await waiter
+asyncio.exceptions.CancelledError
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.9/asyncio/runners.py", line 44, in run
+    return loop.run_until_complete(main)
+  File "uvloop/loop.pyx", line 1495, in uvloop.loop.Loop.run_until_complete
+  File "uvloop/loop.pyx", line 1488, in uvloop.loop.Loop.run_until_complete
+  File "uvloop/loop.pyx", line 1377, in uvloop.loop.Loop.run_forever
+  File "uvloop/loop.pyx", line 550, in uvloop.loop.Loop._run
+  File "uvloop/handles/poll.pyx", line 213, in uvloop.loop.__on_uvpoll_event
+  File "uvloop/cbhandles.pyx", line 83, in uvloop.loop.Handle._run
+  File "uvloop/cbhandles.pyx", line 66, in uvloop.loop.Handle._run
+  File "uvloop/loop.pyx", line 390, in uvloop.loop.Loop._read_from_self
+  File "uvloop/loop.pyx", line 395, in uvloop.loop.Loop._invoke_signals
+  File "uvloop/loop.pyx", line 370, in uvloop.loop.Loop._ceval_process_signals
+KeyboardInterrupt
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/hunter/src/tradetempo/tradetempo/wsdydx.py", line 109, in consume
+    await consumer_handler(websocket)
+  File "/home/hunter/src/tradetempo/tradetempo/wsdydx.py", line 92, in consumer_handler
+    async for message in websocket:
+  File "/home/hunter/src/tradetempo/env/lib/python3.9/site-packages/websockets/legacy/protocol.py", line 482, in __aiter__
+    yield await self.recv()
+  File "/home/hunter/src/tradetempo/env/lib/python3.9/site-packages/websockets/legacy/protocol.py", line 536, in recv
+    await asyncio.wait(
+  File "/usr/local/lib/python3.9/asyncio/tasks.py", line 413, in wait
+    return await _wait(fs, timeout, return_when, loop)
+  File "/usr/local/lib/python3.9/asyncio/tasks.py", line 525, in _wait
+    await waiter
+asyncio.exceptions.CancelledError
+2022-08-05 03:28:29,307 - tradetempo.wsdydx - INFO - Exit signal received.
+2022-08-05 03:40:42,045 - tradetempo.wsdydxsimplified - INFO - Exit signal received.
