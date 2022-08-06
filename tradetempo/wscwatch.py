@@ -77,9 +77,9 @@ async def message_router(message):
             trades_update = json.loads(MessageToJson(stream_message))
 
             received_timestamp = time.time_ns()
-            exchange_id = Int64(trades_update["marketUpdate"]["market"]["exchangeId"])
-            market_id = Int64(trades_update["marketUpdate"]["market"]["marketId"])
-            currency_pair_id = Int64(trades_update["marketUpdate"]["market"]["currencyPairId"])
+            exchange_id = trades_update["marketUpdate"]["market"]["exchangeId"]
+            market_id = trades_update["marketUpdate"]["market"]["marketId"]
+            currency_pair_id = trades_update["marketUpdate"]["market"]["currencyPairId"]
 
             for trade in trades_update["marketUpdate"]["tradesUpdate"]["trades"]:
                 trade_formatted = {
