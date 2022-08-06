@@ -6,8 +6,8 @@ import traceback
 
 from multiprocessing import Process
 
-import tradetempo.wscwatchsimplified
-import tradetempo.wsdydxsimplified
+import tradetempo.wscwatch
+import tradetempo.wsdydx
 
 os.chdir(sys.path[0])
 
@@ -43,14 +43,14 @@ if __name__ == "__main__":
     logger.debug(f"monitored_assets: {monitored_assets}")
 
     ws_cwatch = Process(
-        target=tradetempo.wscwatchsimplified.start_stream,
+        target=tradetempo.wscwatch.start_stream,
         args=(
             monitored_assets["cryptowatch"],
             config["cryptowatch"]["subscription_count"],
         ),
     )
     ws_dydx = Process(
-        target=tradetempo.wsdydxsimplified.start_stream, args=(monitored_assets["dydx"],)
+        target=tradetempo.wsdydx.start_stream, args=(monitored_assets["dydx"],)
     )
 
     logger.info("Starting Cryptowatch websocket process.")
