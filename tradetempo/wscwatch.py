@@ -121,7 +121,8 @@ async def message_router(message):
     except protobuf.message.DecodeError as ex:
         logger.error("Could not decode this message: {}".format(message))
         logger.error(traceback.format_exc())
-    except Exception as ex:
+    except Exception as e:
+        logger.exception(f"Exception in message_router: {e}")
         logger.error(traceback.format_exc())
 
 

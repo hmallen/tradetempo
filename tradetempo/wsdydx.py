@@ -90,7 +90,7 @@ async def consumer_handler(websocket: websockets.WebSocketClientProtocol):
         trade_json = json.loads(message)
 
         if trade_json["type"] == "channel_data":
-            asyncio.create_task(process_trade(trade_message=trade_json))
+            await process_trade(trade_message=trade_json)
 
 
 async def consume(subscription_request):
