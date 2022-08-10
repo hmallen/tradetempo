@@ -1,21 +1,20 @@
 import asyncio
-from bson import Decimal128
 import configparser
 import datetime
-import json
+import functools
 import logging
 import os
 import signal
 import sys
 import time
-import functools
 
-import websockets
-
-from motor.motor_asyncio import AsyncIOMotorClient
-from dydx3.constants import WS_HOST_MAINNET
-
+import simplejson as json
 import uvloop
+import websockets
+from bson import Decimal128
+from dydx3.constants import WS_HOST_MAINNET
+from motor.motor_asyncio import AsyncIOMotorClient
+
 asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
 
 os.chdir(sys.path[0])
@@ -85,7 +84,7 @@ async def consumer_handler(websocket: websockets.WebSocketClientProtocol):
         port=int(config["mongodb"]["port"]),
         directConnection=True,
     )[config["mongodb"]["db"]]
-    
+
     async for message in websocket:
         trade_json = json.loads(message)
 
@@ -96,7 +95,8 @@ async def consumer_handler(websocket: websockets.WebSocketClientProtocol):
 async def consume(subscription_request):
     loop = asyncio.get_running_loop()
     loop.add_signal_handler(
-        signal.SIGTERM, functools.partial(stop_stream, signal.SIGTERM, loop))
+        signal.SIGTERM, functools.partial(stop_stream, signal.SIGTERM, loop)
+    )
 
     async for websocket in websockets.connect(WS_HOST_MAINNET, compression=None):
         try:
@@ -107,15 +107,16 @@ async def consume(subscription_request):
             )
             await websocket.send(json.dumps(subscription_request))
             await consumer_handler(websocket)
-        
+
         except websockets.ConnectionClosed:
-            logger.debug('Continuing after encountering websockets.ConnectionClosed.')
+            logger.debug("Continuing after encountering websockets.ConnectionClosed.")
             continue
 
 
 def stop_stream(signame, loop):
     logger.debug(f"Got signal {signame}. Stopping event loop.")
     loop.stop()
+
 
 def start_stream(asset):
     ws_request = {

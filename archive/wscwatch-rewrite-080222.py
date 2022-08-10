@@ -1,7 +1,9 @@
 import configparser
 import cryptowatch as cw
+
 # import datetime
 from bson import Decimal128, Int64
+
 # import json
 import logging
 import time

@@ -1,37 +1,30 @@
 import asyncio
 import configparser
-
 import datetime
-
-import json
+import functools
 import logging
-from motor.motor_asyncio import AsyncIOMotorClient
 import os
 import signal
 import sys
 import time
-import websockets
-
-from bson import Decimal128, Int64
-
-import cryptowatch as cw
-
 import traceback
 
-from google import protobuf
-from google.protobuf.json_format import MessageToJson
-
-import functools
-
+import cryptowatch as cw
+import simplejson as json
+import uvloop
+import websockets
+from bson import Decimal128, Int64
 # from cryptowatch.utils import log
 from cryptowatch.errors import APIKeyError
-from cryptowatch.utils import forge_stream_subscription_payload
-from cryptowatch.stream.proto.public.stream import stream_pb2
 from cryptowatch.stream.proto.public.client import client_pb2
+from cryptowatch.stream.proto.public.stream import stream_pb2
+from cryptowatch.utils import forge_stream_subscription_payload
+from google import protobuf
+from google.protobuf.json_format import MessageToJson
+from motor.motor_asyncio import AsyncIOMotorClient
 
 from tradetempo.cwatchhelper import MarketInfo
 
-import uvloop
 asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
 
 os.chdir(sys.path[0])
@@ -64,14 +57,14 @@ async def message_router(message):
         if message == b"\x01":
             logger.debug(f"Heartbeat received: {message}")
             return
-        
+
         global _db
 
         stream_message = stream_pb2.StreamMessage()
         stream_message.ParseFromString(message)
 
         if str(stream_message.marketUpdate.intervalsUpdate):
-            logger.debug('INTERVALS UPDATE')
+            logger.debug("INTERVALS UPDATE")
 
         elif str(stream_message.marketUpdate.tradesUpdate):
             trades_update = json.loads(MessageToJson(stream_message))
@@ -94,7 +87,9 @@ async def message_router(message):
                     "side": trade["orderSide"].rstrip("SIDE").lower(),
                     "price": Decimal128(trade["priceStr"]),
                     "amount": Decimal128(trade["amountStr"]),
-                    "timestamp": datetime.datetime.fromtimestamp(int(trade["timestamp"])),
+                    "timestamp": datetime.datetime.fromtimestamp(
+                        int(trade["timestamp"])
+                    ),
                     "timestampNano": Int64(trade["timestampNano"]),
                     "priceStr": trade["priceStr"],
                     "amountStr": trade["amountStr"],
@@ -107,13 +102,13 @@ async def message_router(message):
                 logger.debug(f"insert_result.inserted_id: {insert_result.inserted_id}")
 
         elif str(stream_message.marketUpdate.orderBookUpdate):
-            logger.debug('ORDERBOOK UPDATE')
+            logger.debug("ORDERBOOK UPDATE")
 
         elif str(stream_message.marketUpdate.orderBookDeltaUpdate):
-            logger.debug('ORDERBOOK DELTA UPDATE')
+            logger.debug("ORDERBOOK DELTA UPDATE")
 
         elif str(stream_message.marketUpdate.orderBookSpreadUpdate):
-            logger.debug('ORDERBOOK SPREAD UPDATE')
+            logger.debug("ORDERBOOK SPREAD UPDATE")
 
         else:
             logger.debug(stream_message)
@@ -141,8 +136,9 @@ async def consumer_handler(websocket: websockets.WebSocketClientProtocol):
 async def consume(ws_url, subs_payload):
     loop = asyncio.get_running_loop()
     loop.add_signal_handler(
-        signal.SIGTERM, functools.partial(stop_stream, signal.SIGTERM, loop))
-    
+        signal.SIGTERM, functools.partial(stop_stream, signal.SIGTERM, loop)
+    )
+
     async for websocket in websockets.connect(ws_url, compression=None):
         try:
             logger.debug(
@@ -152,9 +148,9 @@ async def consume(ws_url, subs_payload):
             )
             await websocket.send(subs_payload)
             await consumer_handler(websocket)
-        
+
         except websockets.ConnectionClosed:
-            logger.debug('Continuing after encountering websockets.ConnectionClosed.')
+            logger.debug("Continuing after encountering websockets.ConnectionClosed.")
             continue
 
 
@@ -184,7 +180,7 @@ def start_stream(assets, count):
 
     try:
         asyncio.run(consume(DSN, subs_payload))
-    
+
     except KeyboardInterrupt:
         logger.info("Exit signal received.")
 

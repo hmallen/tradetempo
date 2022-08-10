@@ -16,6 +16,7 @@ from motor.motor_asyncio import AsyncIOMotorClient
 from dydx3.constants import WS_HOST_MAINNET
 
 import uvloop
+
 asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
 
 os.chdir(sys.path[0])

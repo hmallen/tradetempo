@@ -12,8 +12,8 @@ stream_handler.setFormatter(formatter)
 logger.addHandler(stream_handler)
 
 
-if __name__ == '__main__':
-    logger.debug('Debug test.')
-    logger.info('Info test.')
-    logger.error('Error test.')
-    logger.exception('Exception test.')
+if __name__ == "__main__":
+    logger.debug("Debug test.")
+    logger.info("Info test.")
+    logger.error("Error test.")
+    logger.exception("Exception test.")

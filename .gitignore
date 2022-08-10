@@ -4,3 +4,4 @@ testing/test_user.json
 *.pyc
 .vscode/
 logs/*.log
+*~lock*

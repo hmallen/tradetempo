@@ -1,0 +1,92 @@
+[
+    {
+        "name": "iPath Pure Beta Crude Oil ETN",
+        "ticker": "OIL",
+        "permaTicker": "US000000094134",
+        "openFIGIComposite": "BBG001NC7TG7",
+        "assetType": "Stock",
+        "isActive": true,
+        "countryCode": "US"
+    },
+    {
+        "name": "United States Brent Crude Oil Fund",
+        "ticker": "BNO",
+        "permaTicker": "US000000004395",
+        "openFIGIComposite": "BBG000QZBM11",
+        "assetType": "ETF",
+        "isActive": true,
+        "countryCode": "US"
+    },
+    {
+        "name": "PowerShares DB Crude Oil Double Short ETN",
+        "ticker": "DTO",
+        "permaTicker": "US000000004628",
+        "openFIGIComposite": null,
+        "assetType": "ETF",
+        "isActive": true,
+        "countryCode": "US"
+    },
+    {
+        "name": "BetaPro Crude Oil Leveraged Daily Bull ETF",
+        "ticker": "HZOZF",
+        "permaTicker": "US000000047727",
+        "openFIGIComposite": "BBG000PZ85L1",
+        "assetType": "ETF",
+        "isActive": true,
+        "countryCode": "US"
+    },
+    {
+        "name": "PROSHARES K-1 FREE CRUDE OIL STRATEGY ETF ",
+        "ticker": "OILK",
+        "permaTicker": "US000000058875",
+        "openFIGIComposite": "BBG00DX358T4",
+        "assetType": "ETF",
+        "isActive": true,
+        "countryCode": "US"
+    },
+    {
+        "name": "ProShares Ultra Bloomberg Crude Oil 2x Shares",
+        "ticker": "UCO",
+        "permaTicker": "US000000004241",
+        "openFIGIComposite": "BBG000CSVPZ6",
+        "assetType": "ETF",
+        "isActive": true,
+        "countryCode": "US"
+    },
+    {
+        "name": "UBS ETRACS ProShares Daily 3x Inverse Crude ETN",
+        "ticker": "WTID",
+        "permaTicker": "US000000040770",
+        "openFIGIComposite": null,
+        "assetType": "ETF",
+        "isActive": true,
+        "countryCode": "US"
+    },
+    {
+        "name": "BetaPro Crude Oil Inverse Leveraged Daily Bear ETF",
+        "ticker": "HBTPD",
+        "permaTicker": "US000000046728",
+        "openFIGIComposite": "BBG000TR6CP8",
+        "assetType": "ETF",
+        "isActive": true,
+        "countryCode": "US"
+    },
+    {
+        "name": "ProShares UltraShort Bloomberg Crude Oil -2x Shares",
+        "ticker": "SCO",
+        "permaTicker": "US000000000185",
+        "openFIGIComposite": "BBG000CSZTC9",
+        "assetType": "ETF",
+        "isActive": true,
+        "countryCode": "US"
+    },
+    {
+        "name": "VelocityShares 3x Inverse Crude Oil ETNs linked to the SP GSCI Crude Oil Index ER",
+        "ticker": "DWT",
+        "permaTicker": "US000000040585",
+        "openFIGIComposite": null,
+        "assetType": "ETF",
+        "isActive": true,
+        "countryCode": "US"
+    }
+]
