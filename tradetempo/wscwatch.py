@@ -11,7 +11,6 @@ import traceback
 
 import cryptowatch as cw
 import simplejson as json
-import uvloop
 import websockets
 from bson import Decimal128, Int64
 # from cryptowatch.utils import log
@@ -23,9 +22,8 @@ from google import protobuf
 from google.protobuf.json_format import MessageToJson
 from motor.motor_asyncio import AsyncIOMotorClient
 
-from tradetempo.cwatchhelper import MarketInfo
-
-asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
+# from tradetempo.cwatchhelper import MarketInfo
+from cwatchhelper import MarketInfo
 
 os.chdir(sys.path[0])
 
@@ -44,12 +42,29 @@ file_handler.setLevel(logging.INFO)
 file_handler.setFormatter(formatter)
 logger.addHandler(file_handler)
 
+if sys.platform != "win32":
+    import uvloop
+    asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
+else:
+    logger.warning('Module uvloop not compatible with Windows. Skipping import.')
+
 config = configparser.RawConfigParser()
 config.read(".credentials.cfg")
 cw.api_key = config["cryptowatch"]["api_key"]
 config.read("settings.cfg")
 
 _db = None
+
+
+async def log_latency(websocket):
+    while True:
+        t0 = time.perf_counter()
+        pong_waiter = await websocket.ping()
+        await pong_waiter
+        t1 = time.perf_counter()
+        logger.info("Connection latency: %.3f seconds", t1 - t0)
+
+        await asyncio.sleep(10)
 
 
 async def message_router(message):
@@ -135,17 +150,17 @@ async def consumer_handler(websocket: websockets.WebSocketClientProtocol):
 
 async def consume(ws_url, subs_payload):
     loop = asyncio.get_running_loop()
-    loop.add_signal_handler(
-        signal.SIGTERM, functools.partial(stop_stream, signal.SIGTERM, loop)
-    )
+    if sys.platform != "win32":
+        loop.add_signal_handler(
+            signal.SIGTERM, functools.partial(stop_stream, signal.SIGTERM, loop)
+        )
 
     async for websocket in websockets.connect(ws_url, compression=None):
         try:
-            logger.debug(
-                "Connection established. Sending subscriptions payload: {}".format(
-                    subs_payload
-                )
-            )
+            asyncio.create_task(log_latency(websocket))
+
+            logger.debug(f"Connection established. Sending subscriptions payload: {subs_payload}")
+
             await websocket.send(subs_payload)
             await consumer_handler(websocket)
 
@@ -186,4 +201,5 @@ def start_stream(assets, count):
 
 
 if __name__ == "__main__":
+    os.chdir('../')
     start_stream(["btc", "eth"], count=4)

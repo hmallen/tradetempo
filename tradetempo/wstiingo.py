@@ -10,12 +10,9 @@ import time
 import traceback
 
 import simplejson as json
-import uvloop
 import websockets
 from bson import Decimal128, Int64
 from motor.motor_asyncio import AsyncIOMotorClient
-
-asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
 
 os.chdir(sys.path[0])
 
@@ -35,6 +32,12 @@ file_handler.setLevel(logging.INFO)
 file_handler.setFormatter(formatter)
 logger.addHandler(file_handler)
 
+if sys.platform != "win32":
+    import uvloop
+    asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
+else:
+    logger.warning('Module uvloop not compatible with Windows. Skipping import.')
+
 config = configparser.RawConfigParser()
 # config.read(".credentials.cfg")
 config.read("../.credentials.cfg")
@@ -45,6 +48,17 @@ config.read("../settings.cfg")
 
 _db = None
 subscription_id = None
+
+
+async def log_latency(websocket):
+    while True:
+        t0 = time.perf_counter()
+        pong_waiter = await websocket.ping()
+        await pong_waiter
+        t1 = time.perf_counter()
+        logger.info("Connection latency: %.3f seconds", t1 - t0)
+
+        await asyncio.sleep(10)
 
 
 async def message_router(message):
@@ -66,17 +80,19 @@ async def consumer_handler(websocket: websockets.WebSocketClientProtocol):
 
 async def consume(subscription_request):
     loop = asyncio.get_running_loop()
-    loop.add_signal_handler(
-        signal.SIGTERM, functools.partial(stop_stream, signal.SIGTERM, loop)
-    )
+    if sys.platform != "win32":
+        loop.add_signal_handler(
+            signal.SIGTERM, functools.partial(stop_stream, signal.SIGTERM, loop)
+        )
 
-    async for websocket in websockets.connect("wss://api.tiingo.com/iex", compression=None):
+    async for websocket in websockets.connect(
+        "wss://api.tiingo.com/iex", compression=None
+    ):
         try:
-            logger.debug(
-                "Connection established. Sending subscription request: {}".format(
-                    subscription_request
-                )
-            )
+            asyncio.create_task(log_latency(websocket))
+
+            logger.debug(f"Connection established. Sending subscription request: {subscription_request}")
+
             await websocket.send(json.dumps(subscription_request))
             await consumer_handler(websocket)
 

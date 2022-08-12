@@ -5,7 +5,9 @@ import traceback
 
 import requests
 
-os.chdir(sys.path[0])
+# os.chdir(sys.path[0])
+# os.chdir("../")
+print(f"cwatchhelper: {os.listdir()}")
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)

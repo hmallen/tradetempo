@@ -54,7 +54,7 @@ class SupplementData:
         )
 
         logger.info("")
-    
+
     def add_reference(self, exchange_id=None, market_id=None):
         add_succeeded = False
 
@@ -65,7 +65,7 @@ class SupplementData:
             if exchange_id is not None:
                 if type(exchange_id) != list:
                     exchange_id = [str(id) for id in exchange_id]
-                
+
                 for exchange in self.exchange_reference:
                     if exchange["id"] in exchange_id:
                         self.saved_reference[exchange_id["id"]]
@@ -73,14 +73,14 @@ class SupplementData:
             if market_id is not None:
                 if type(market_id) != list:
                     market_id = [market_id]
-        
+
         except Exception as e:
             logger.exception(f"Exception in SupplementData.add_reference: {e}")
             logger.exception(traceback.format_exc())
-    
+
     def analyze_collection(self):
         pass
-    
+
     def supplement_document(self, doc_id):
         pass
 

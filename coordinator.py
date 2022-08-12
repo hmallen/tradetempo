@@ -40,10 +40,7 @@ if __name__ == "__main__":
             for val in config["cryptowatch"]["monitored_assets"].split(",")
         ],
         "dydx": config["dydx"]["monitored_assets"],
-        "tiingo": [
-            val.strip(" ")
-            for val in config["tiingo"]["tickers"].split(",")
-        ]
+        "tiingo": [val.strip(" ") for val in config["tiingo"]["tickers"].split(",")],
     }
     logger.debug(f"monitored_assets: {monitored_assets}")
 
