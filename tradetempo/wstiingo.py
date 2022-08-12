@@ -39,12 +39,11 @@ else:
     logger.warning('Module uvloop not compatible with Windows. Skipping import.')
 
 config = configparser.RawConfigParser()
-# config.read(".credentials.cfg")
-config.read("../.credentials.cfg")
-# auth_header = {"authorization": config["tiingo"]["api_key"]}
+config.read(".credentials.cfg")
+# config.read("../.credentials.cfg")
 tiingo_key = config["tiingo"]["api_key"]
-# config.read("settings.cfg")
-config.read("../settings.cfg")
+config.read("settings.cfg")
+# config.read("../settings.cfg")
 
 _db = None
 subscription_id = None
@@ -58,12 +57,59 @@ async def log_latency(websocket):
         t1 = time.perf_counter()
         logger.info("Connection latency: %.3f seconds", t1 - t0)
 
-        await asyncio.sleep(10)
+        await asyncio.sleep(int(config['logging']['log_latency_interval']))
 
 
 async def message_router(message):
-    global _db
-    print(json.dumps(message, indent=4))
+    processed_nano = time.time_ns()
+
+    message_type = message["messageType"]
+    if message_type == "A":
+        data = message["data"]
+
+        quote_data = {
+            "updateType": data[0],
+            "timestamp": data[1],
+            "timestampNano": data[2],
+            "ticker": data[3],
+            "bidSize": data[4],
+            "bidPrice": data[5],
+            "midPrice": data[6],
+            "askPrice": data[7],
+            "askSize": data[8],
+            "lastPrice": data[9],
+            "lastSize": data[10],
+            "halted": data[11],
+            "afterHours": data[12],
+            "intermarketSweepOrder": data[13],
+            "oddlot": data[14],
+            "nmsRule611": data[15],
+            "processedNano": processed_nano
+        }
+
+        insert_result = await _db[config["mongodb"]["collection"]].insert_one(quote_data)
+        logger.debug(f"insert_result.inserted_id: {insert_result.inserted_id}")
+
+    elif message_type == "H":
+        logger.debug(f"Heartbeat @ {processed_nano}")
+
+    elif message_type == "I":
+        if "subscriptionId" in message["data"]:
+            global _subscription_id
+            _subscription_id = message["data"]["subscriptionId"]
+        else:
+            logger.warning(
+                f"Unknown data: {message['data']} in messageType=I @ {processed_nano}"
+            )
+
+    elif message_type == "U":
+        pass
+
+    elif message_type == "E":
+        logger.error(f"Encountered")
+
+    elif message_type == "D":
+        pass
 
 
 async def consumer_handler(websocket: websockets.WebSocketClientProtocol):

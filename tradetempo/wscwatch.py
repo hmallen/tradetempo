@@ -22,8 +22,8 @@ from google import protobuf
 from google.protobuf.json_format import MessageToJson
 from motor.motor_asyncio import AsyncIOMotorClient
 
-# from tradetempo.cwatchhelper import MarketInfo
-from cwatchhelper import MarketInfo
+from tradetempo.cwatchhelper import MarketInfo
+# from cwatchhelper import MarketInfo
 
 os.chdir(sys.path[0])
 
@@ -64,7 +64,7 @@ async def log_latency(websocket):
         t1 = time.perf_counter()
         logger.info("Connection latency: %.3f seconds", t1 - t0)
 
-        await asyncio.sleep(10)
+        await asyncio.sleep(int(config['logging']['log_latency_interval']))
 
 
 async def message_router(message):
@@ -84,14 +84,14 @@ async def message_router(message):
         elif str(stream_message.marketUpdate.tradesUpdate):
             trades_update = json.loads(MessageToJson(stream_message))
 
-            received_timestamp = time.time_ns()
+            processed_nano = time.time_ns()
             exchange_id = trades_update["marketUpdate"]["market"]["exchangeId"]
             market_id = trades_update["marketUpdate"]["market"]["marketId"]
             currency_pair_id = trades_update["marketUpdate"]["market"]["currencyPairId"]
 
             for trade in trades_update["marketUpdate"]["tradesUpdate"]["trades"]:
                 trade_formatted = {
-                    "receivedTimestamp": received_timestamp,
+                    "processedNano": processed_nano,
                     "exchangeId": exchange_id,
                     "marketId": market_id,
                     "currencyPairId": currency_pair_id,

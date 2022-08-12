@@ -51,11 +51,11 @@ async def log_latency(websocket):
         t1 = time.perf_counter()
         logger.info("Connection latency: %.3f seconds", t1 - t0)
 
-        await asyncio.sleep(10)
+        await asyncio.sleep(int(config['logging']['log_latency_interval']))
 
 
 async def process_trade(trade_message):
-    received_timestamp = time.time_ns()
+    processed_nano = time.time_ns()
 
     id = trade_message["id"]
     exchange = "dydx"
@@ -66,7 +66,7 @@ async def process_trade(trade_message):
 
     for trade in trade_message["contents"]["trades"]:
         trade_formatted = {
-            "received_timestamp": received_timestamp,
+            "processedNano": processed_nano,
             "id": id,
             "exchange": exchange,
             "market": market,
