@@ -33,15 +33,17 @@ logger.addHandler(file_handler)
 
 if sys.platform != "win32":
     import uvloop
+
     asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
 else:
-    logger.warning('Module uvloop not compatible with Windows. Skipping import.')
+    logger.warning("Module uvloop not compatible with Windows. Skipping import.")
 
 config_path = "settings.cfg"
 config = configparser.RawConfigParser()
 config.read(config_path)
 
 _db = None
+
 
 async def log_latency(websocket):
     while True:
@@ -51,7 +53,7 @@ async def log_latency(websocket):
         t1 = time.perf_counter()
         logger.info("Connection latency: %.3f seconds", t1 - t0)
 
-        await asyncio.sleep(int(config['logging']['log_latency_interval']))
+        await asyncio.sleep(int(config["logging"]["log_latency_interval"]))
 
 
 async def process_trade(trade_message):
@@ -114,7 +116,9 @@ async def consume(subscription_request):
         try:
             asyncio.create_task(log_latency(websocket))
 
-            logger.debug(f"Connection established. Sending subscription request: {subscription_request}")
+            logger.debug(
+                f"Connection established. Sending subscription request: {subscription_request}"
+            )
 
             await websocket.send(json.dumps(subscription_request))
             await consumer_handler(websocket)

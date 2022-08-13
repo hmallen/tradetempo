@@ -26,17 +26,17 @@ stream_handler.setLevel(logging.DEBUG)
 stream_handler.setFormatter(formatter)
 logger.addHandler(stream_handler)
 
-# file_handler = logging.FileHandler("logs/wstiingo.log")
-file_handler = logging.FileHandler("../logs/wstiingo.log")
+file_handler = logging.FileHandler("logs/wstiingo.log")
 file_handler.setLevel(logging.INFO)
 file_handler.setFormatter(formatter)
 logger.addHandler(file_handler)
 
 if sys.platform != "win32":
     import uvloop
+
     asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
 else:
-    logger.warning('Module uvloop not compatible with Windows. Skipping import.')
+    logger.warning("Module uvloop not compatible with Windows. Skipping import.")
 
 config = configparser.RawConfigParser()
 config.read(".credentials.cfg")
@@ -57,7 +57,7 @@ async def log_latency(websocket):
         t1 = time.perf_counter()
         logger.info("Connection latency: %.3f seconds", t1 - t0)
 
-        await asyncio.sleep(int(config['logging']['log_latency_interval']))
+        await asyncio.sleep(int(config["logging"]["log_latency_interval"]))
 
 
 async def message_router(message):
@@ -84,10 +84,12 @@ async def message_router(message):
             "intermarketSweepOrder": data[13],
             "oddlot": data[14],
             "nmsRule611": data[15],
-            "processedNano": processed_nano
+            "processedNano": processed_nano,
         }
 
-        insert_result = await _db[config["mongodb"]["collection"]].insert_one(quote_data)
+        insert_result = await _db[config["mongodb"]["collection"]].insert_one(
+            quote_data
+        )
         logger.debug(f"insert_result.inserted_id: {insert_result.inserted_id}")
 
     elif message_type == "H":
@@ -137,7 +139,9 @@ async def consume(subscription_request):
         try:
             asyncio.create_task(log_latency(websocket))
 
-            logger.debug(f"Connection established. Sending subscription request: {subscription_request}")
+            logger.debug(
+                f"Connection established. Sending subscription request: {subscription_request}"
+            )
 
             await websocket.send(json.dumps(subscription_request))
             await consumer_handler(websocket)

@@ -13,6 +13,7 @@ import cryptowatch as cw
 import simplejson as json
 import websockets
 from bson import Decimal128, Int64
+
 # from cryptowatch.utils import log
 from cryptowatch.errors import APIKeyError
 from cryptowatch.stream.proto.public.client import client_pb2
@@ -23,6 +24,7 @@ from google.protobuf.json_format import MessageToJson
 from motor.motor_asyncio import AsyncIOMotorClient
 
 from tradetempo.cwatchhelper import MarketInfo
+
 # from cwatchhelper import MarketInfo
 
 os.chdir(sys.path[0])
@@ -44,9 +46,10 @@ logger.addHandler(file_handler)
 
 if sys.platform != "win32":
     import uvloop
+
     asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
 else:
-    logger.warning('Module uvloop not compatible with Windows. Skipping import.')
+    logger.warning("Module uvloop not compatible with Windows. Skipping import.")
 
 config = configparser.RawConfigParser()
 config.read(".credentials.cfg")
@@ -64,7 +67,7 @@ async def log_latency(websocket):
         t1 = time.perf_counter()
         logger.info("Connection latency: %.3f seconds", t1 - t0)
 
-        await asyncio.sleep(int(config['logging']['log_latency_interval']))
+        await asyncio.sleep(int(config["logging"]["log_latency_interval"]))
 
 
 async def message_router(message):
@@ -159,7 +162,9 @@ async def consume(ws_url, subs_payload):
         try:
             asyncio.create_task(log_latency(websocket))
 
-            logger.debug(f"Connection established. Sending subscriptions payload: {subs_payload}")
+            logger.debug(
+                f"Connection established. Sending subscriptions payload: {subs_payload}"
+            )
 
             await websocket.send(subs_payload)
             await consumer_handler(websocket)
@@ -201,5 +206,5 @@ def start_stream(assets, count):
 
 
 if __name__ == "__main__":
-    os.chdir('../')
+    os.chdir("../")
     start_stream(["btc", "eth"], count=4)

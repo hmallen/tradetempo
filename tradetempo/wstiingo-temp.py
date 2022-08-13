@@ -71,7 +71,7 @@ async def message_router(message):
             "intermarketSweepOrder": data[13],
             "oddlot": data[14],
             "nmsRule611": data[15],
-            "processedNano": processed_nano
+            "processedNano": processed_nano,
         }
 
     elif message_type == "H":
