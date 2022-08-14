@@ -68,6 +68,7 @@ async def message_router(message):
         data = message["data"]
 
         quote_data = {
+            "exchange": message["service"],
             "updateType": data[0],
             "timestamp": data[1],
             "timestampNano": data[2],
