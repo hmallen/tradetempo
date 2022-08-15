@@ -11,7 +11,7 @@ import sys
 from google.protobuf.json_format import MessageToJson
 from pymongo import MongoClient
 
-from tradetempo.cwatchhelper import MarketInfo
+from tradetempo.utils.cwatchhelper import MarketInfo
 
 from pprint import pprint
 

@@ -27,7 +27,7 @@ from cryptowatch.utils import forge_stream_subscription_payload
 from cryptowatch.stream.proto.public.stream import stream_pb2
 from cryptowatch.stream.proto.public.client import client_pb2
 
-from tradetempo.cwatchhelper import MarketInfo
+from tradetempo.utils.cwatchhelper import MarketInfo
 
 os.chdir(sys.path[0])
 

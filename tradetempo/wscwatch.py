@@ -23,11 +23,13 @@ from google import protobuf
 from google.protobuf.json_format import MessageToJson
 from motor.motor_asyncio import AsyncIOMotorClient
 
-from tradetempo.cwatchhelper import MarketInfo
+from tradetempo.utils.cwatchhelper import MarketInfo
 
 # from cwatchhelper import MarketInfo
 
-os.chdir(sys.path[0])
+from pathlib import Path
+
+os.chdir(f"{Path(__file__).resolve().parent}/..")
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)

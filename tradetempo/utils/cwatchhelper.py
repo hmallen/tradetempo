@@ -5,7 +5,9 @@ import traceback
 
 import requests
 
-os.chdir(sys.path[0])
+from pathlib import Path
+
+os.chdir(f"{Path(__file__).resolve().parent}/../..")
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)

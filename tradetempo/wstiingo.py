@@ -14,7 +14,9 @@ import websockets
 from bson import Decimal128, Int64
 from motor.motor_asyncio import AsyncIOMotorClient
 
-os.chdir(sys.path[0])
+from pathlib import Path
+
+os.chdir(f"{Path(__file__).resolve().parent}/..")
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -106,13 +108,13 @@ async def message_router(message):
             )
 
     elif message_type == "U":
-        pass
+        logger.info(f"Received info message: {message}")
 
     elif message_type == "E":
-        logger.error(f"Encountered")
+        logger.error(f"Received error message: {message}")
 
     elif message_type == "D":
-        pass
+        logger.info(f"Receivfed delete message: {message}")
 
 
 async def consumer_handler(websocket: websockets.WebSocketClientProtocol):
