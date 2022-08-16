@@ -6,7 +6,7 @@ import traceback
 
 import requests
 import simplejson as json
-from pymongo import MongoClient
+from pymongo import MongoClient, UpdateOne
 
 from pathlib import Path
 
@@ -33,7 +33,7 @@ config.read("settings.cfg")
 
 class SupplementData:
     def __init__(
-        self, db, collection, skip_exchange_update=False, skip_market_update=False
+        self, db, collection, skip_exchange_update=False, skip_market_update=False, skip_pair_update=False
     ):
         self.db = MongoClient(
             host=config["mongodb"]["host"],
@@ -47,15 +47,27 @@ class SupplementData:
             logger.info("Updating exchange reference.")
             exchanges = requests.get("https://api.cryptowat.ch/exchanges").json()[
                 "result"
-            ]
+            
+            bulk_ops = []
             for exchange in exchanges:
-                update_result = self.db[
+                """update_result = self.db[
                     config["mongodb"]["cryptowatch_collection"]
                 ].update_one(
                     {"type": "exchange", "id": exchange["id"]},
                     {"$set": exchange},
                     upsert=True,
+                )"""
+                
+                bulk_ops.append(
+                    UpdateOne(
+                        {"type": "exchange", "id": exchange["id"]},
+                        {"$set": exchange},
+                        upsert=True,
+                    )
                 )
+            logger.debug(f"Beginning bulk exchange update of {len(bulk_ops)} operations.")
+            bulk_result = self.db[config["mongodb"]["cryptowatch_collection"]].bulk_write(bulk_ops)
+            logger.info(f"New Exchanges: {bulk_result.inserted_count} / Updated Exchanges: {bulk_result.modified_count}")
             # logger.debug(
             #     f"Added {len(update_result.upserted_ids) if update_result.upserted_ids is not None else 0} exchanges."
             # )
@@ -65,7 +77,7 @@ class SupplementData:
         if not skip_market_update:
             logger.info("Updating market reference.")
             markets = requests.get("https://api.cryptowat.ch/markets").json()["result"]
-            update_count = 0
+            """update_count = 0
             for market in markets:
                 update_result = self.db[
                     config["mongodb"]["cryptowatch_collection"]
@@ -75,13 +87,29 @@ class SupplementData:
                     upsert=True,
                 )
                 update_count += 1
-                logger.debug(f"[market] update_count: {update_count}")
+                logger.debug(f"[market] update_count: {update_count}")"""
+            
+            bulk_ops = []
+            for market in markets:
+                bulk_ops.append(
+                    UpdateOne(
+                        {"type": "market", "id": market["id"]},
+                        {"$set": market},
+                        upsert=True
+                    )
+            logger.debug(f"Beginning bulk market update of {len(bulk_ops)} operations.")
+            bulk_result = self.db[config["mongodb"]["cryptowatch_collection"]].bulk_write(bulk_ops)
+            logger.info(f"New Markets: {bulk_result.inserted_count} / Updated Markets: {bulk_result.modified_count}")
 
             # logger.debug(
             #     f"Added {len(update_result.upserted_ids) if update_result.upserted_ids is not None else 0} markets."
             # )
         else:
             logger.warning("Skipping market update.")
+        
+        if not skip_pair_update:
+            logger. info("Updating pair reference.")
+            pairs = requests.get("https://api.cryptowat.ch/pairs").json()["result"]
 
         self.reference = {"exchange": {}, "market": {}}
 
