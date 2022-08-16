@@ -30,10 +30,17 @@ logger.addHandler(file_handler)
 config = configparser.RawConfigParser()
 config.read("settings.cfg")
 
+cwatch_coll = config["mongodb"]["cryptowatch_collection"]
+
 
 class SupplementData:
     def __init__(
-        self, db, collection, skip_exchange_update=False, skip_market_update=False, skip_pair_update=False
+        self,
+        db,
+        collection,
+        skip_exchange_update=False,
+        skip_market_update=False,
+        skip_pair_update=False,
     ):
         self.db = MongoClient(
             host=config["mongodb"]["host"],
@@ -47,17 +54,18 @@ class SupplementData:
             logger.info("Updating exchange reference.")
             exchanges = requests.get("https://api.cryptowat.ch/exchanges").json()[
                 "result"
-            
+            ]
+
             bulk_ops = []
             for exchange in exchanges:
                 """update_result = self.db[
-                    config["mongodb"]["cryptowatch_collection"]
+                    cwatch_coll
                 ].update_one(
                     {"type": "exchange", "id": exchange["id"]},
                     {"$set": exchange},
                     upsert=True,
                 )"""
-                
+
                 bulk_ops.append(
                     UpdateOne(
                         {"type": "exchange", "id": exchange["id"]},
@@ -65,9 +73,13 @@ class SupplementData:
                         upsert=True,
                     )
                 )
-            logger.debug(f"Beginning bulk exchange update of {len(bulk_ops)} operations.")
-            bulk_result = self.db[config["mongodb"]["cryptowatch_collection"]].bulk_write(bulk_ops)
-            logger.info(f"New Exchanges: {bulk_result.inserted_count} / Updated Exchanges: {bulk_result.modified_count}")
+            logger.debug(
+                f"Beginning bulk exchange update of {len(bulk_ops)} operations."
+            )
+            bulk_result = self.db[cwatch_coll].bulk_write(bulk_ops)
+            logger.info(
+                f"New Exchanges: {bulk_result.inserted_count} / Updated Exchanges: {bulk_result.modified_count}"
+            )
             # logger.debug(
             #     f"Added {len(update_result.upserted_ids) if update_result.upserted_ids is not None else 0} exchanges."
             # )
@@ -80,7 +92,7 @@ class SupplementData:
             """update_count = 0
             for market in markets:
                 update_result = self.db[
-                    config["mongodb"]["cryptowatch_collection"]
+                    cwatch_coll
                 ].update_one(
                     {"type": "market", "id": market["id"]},
                     {"$set": market},
@@ -88,30 +100,46 @@ class SupplementData:
                 )
                 update_count += 1
                 logger.debug(f"[market] update_count: {update_count}")"""
-            
+
             bulk_ops = []
             for market in markets:
                 bulk_ops.append(
                     UpdateOne(
                         {"type": "market", "id": market["id"]},
                         {"$set": market},
-                        upsert=True
+                        upsert=True,
                     )
+                )
             logger.debug(f"Beginning bulk market update of {len(bulk_ops)} operations.")
-            bulk_result = self.db[config["mongodb"]["cryptowatch_collection"]].bulk_write(bulk_ops)
-            logger.info(f"New Markets: {bulk_result.inserted_count} / Updated Markets: {bulk_result.modified_count}")
+            bulk_result = self.db[cwatch_coll].bulk_write(bulk_ops)
+            logger.info(
+                f"New Markets: {bulk_result.inserted_count} / Updated Markets: {bulk_result.modified_count}"
+            )
 
             # logger.debug(
             #     f"Added {len(update_result.upserted_ids) if update_result.upserted_ids is not None else 0} markets."
             # )
         else:
             logger.warning("Skipping market update.")
-        
+
         if not skip_pair_update:
-            logger. info("Updating pair reference.")
+            logger.info("Updating pair reference.")
             pairs = requests.get("https://api.cryptowat.ch/pairs").json()["result"]
 
-        self.reference = {"exchange": {}, "market": {}}
+            bulk_ops = []
+            for pair in pairs:
+                bulk_ops.append(
+                    UpdateOne(
+                        {"type": "pair", "id": pair["id"]}, {"$set": pair}, upsert=True
+                    )
+                )
+            logger.debug(f"Beginning bulk pair update of {len(bulk_ops)} operations.")
+            bulk_result = self.db[cwatch_coll].bulk_write(bulk_ops)
+            logger.info(
+                f"New Pairs: {bulk_result.inserted_count} / Updated Pairs: {bulk_result.modified_count}"
+            )
+
+        self.reference = {"exchange": {}, "market": {}, "pair": {}}
 
         logger.info("Building reference for exchanges in database.")
         db_exchangeId = self.db[self.collection].distinct("exchangeId")
@@ -120,14 +148,12 @@ class SupplementData:
                 db_exchangeId.pop(idx)
         logger.debug(f"db_exchangeId: {db_exchangeId}")
         for id in db_exchangeId:
-            exchange_doc = self.db[
-                config["mongodb"]["cryptowatch_collection"]
-            ].find_one({"type": "exchange", "id": int(id)})
+            exchange_doc = self.db[cwatch_coll].find_one(
+                {"type": "exchange", "id": int(id)}
+            )
 
             self.reference["exchange"][id] = exchange_doc["symbol"]
 
-        from pprint import pprint        
-        
         logger.info("Building reference for markets in database.")
         db_marketId = self.db[self.collection].distinct("marketId")
         for mkt in enumerate(db_marketId):
@@ -135,7 +161,7 @@ class SupplementData:
                 db_marketId.pop(idx)
         logger.debug(f"db_marketId: {db_marketId}")
         for id in db_marketId:
-            market_doc = self.db[config["mongodb"]["cryptowatch_collection"]].find_one(
+            market_doc = self.db[cwatch_coll].find_one(
                 {"type": "market", "id": int(id)}
             )
 
@@ -174,20 +200,36 @@ class SupplementData:
 
                 if "market" not in market_doc:
                     market_doc.update(market_info)
-                    update_result = self.db[config['mongodb']['cryptowatch_collection']].update_one(
-                        {"_id": market_doc["_id"]},
-                        {"$set": market_doc}
+                    update_result = self.db[cwatch_coll].update_one(
+                        {"_id": market_doc["_id"]}, {"$set": market_doc}
                     )
                     if update_result.modified_count > 0:
-                        logger.debug(f"Updated reference for market {market_doc['id']}.")
+                        logger.debug(
+                            f"Updated reference for market {market_doc['id']}."
+                        )
 
             else:
                 logger.warning(f"Market ID {id} not found. Skipping.")
+
+        logger.info("Building reference for pairs in database.")
+        db_currencyPairId = self.db[self.collection].distinct("currencyPairId")
+        for idx, pair in enumerate(db_currencyPairId):
+            if pair is None:
+                db_currencyPairId.pop(idx)
+        logger.debug(f"db_currencyPairId: {db_currencyPairId}")
+        for id in db_currencyPairId:
+            pair_doc = self.db[cwatch_coll].find_one({"type": "pair", "id": int(id)})
+
+            self.reference["pair"][id] = pair_doc["symbol"]
 
 
 if __name__ == "__main__":
     supp = SupplementData(
         db=config["mongodb"]["db"],
         collection=config["mongodb"]["collection"],
-        skip_market_update=True,
+        # skip_market_update=True,
     )
+
+    from pprint import pprint
+
+    pprint(supp.reference)
