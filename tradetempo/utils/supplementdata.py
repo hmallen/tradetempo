@@ -46,6 +46,7 @@ class SupplementData:
             host=config["mongodb"]["host"],
             port=int(config["mongodb"]["port"]),
             directConnection=True,
+            retryWrites=False,
         )[db]
 
         self.collection = collection

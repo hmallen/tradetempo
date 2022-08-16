@@ -147,6 +147,7 @@ async def consumer_handler(websocket: websockets.WebSocketClientProtocol):
         host=config["mongodb"]["host"],
         port=int(config["mongodb"]["port"]),
         directConnection=True,
+        retryWrites=False,
     )[config["mongodb"]["db"]]
 
     async for message in websocket:
