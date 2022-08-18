@@ -25,8 +25,6 @@ from motor.motor_asyncio import AsyncIOMotorClient
 
 from tradetempo.utils.cwatchhelper import MarketInfo
 
-# from cwatchhelper import MarketInfo
-
 from pathlib import Path
 
 os.chdir(f"{Path(__file__).resolve().parent}/..")
@@ -78,8 +76,6 @@ async def message_router(message):
             logger.debug(f"Heartbeat received: {message}")
             return
 
-        global _db
-
         stream_message = stream_pb2.StreamMessage()
         stream_message.ParseFromString(message)
 
@@ -89,21 +85,20 @@ async def message_router(message):
         elif str(stream_message.marketUpdate.tradesUpdate):
             trades_update = json.loads(MessageToJson(stream_message))
 
-            processed_nano = time.time_ns()
-            exchange_id = trades_update["marketUpdate"]["market"]["exchangeId"]
-            market_id = trades_update["marketUpdate"]["market"]["marketId"]
-            currency_pair_id = trades_update["marketUpdate"]["market"]["currencyPairId"]
+            timeseries_message = {
+                "metadata": {
+                    "exchangeId": trades_update["marketUpdate"]["market"]["exchangeId"],
+                    "marketId": trades_update["marketUpdate"]["market"]["marketId"],
+                    "currencyPairId": trades_update["marketUpdate"]["market"]["currencyPairId"],
+                    "externalId": trade["externalId"],
+                }
+            }
 
+            trades = []
             for trade in trades_update["marketUpdate"]["tradesUpdate"]["trades"]:
-                trade_formatted = {
-                    "processedNano": processed_nano,
-                    "exchangeId": exchange_id,
-                    "marketId": market_id,
-                    "currencyPairId": currency_pair_id,
-                    # "market": XYZ,
-                    # "exchange": XYZ,
-                    # "base": XYZ,
-                    # "quote": XYZ,
+                trade_formatted = timeseries_message.copy()
+                trade_formatted["timestamp"] = datetime.datetime.utcnow().isoformat()
+                trade_formatted["data"] = {
                     "side": trade["orderSide"].rstrip("SIDE").lower(),
                     "price": Decimal128(trade["priceStr"]),
                     "amount": Decimal128(trade["amountStr"]),
@@ -111,15 +106,13 @@ async def message_router(message):
                         int(trade["timestamp"])
                     ),
                     "timestampNano": Int64(trade["timestampNano"]),
-                    "priceStr": trade["priceStr"],
-                    "amountStr": trade["amountStr"],
-                    "externalId": trade["externalId"],
                 }
 
-                insert_result = await _db[config["mongodb"]["collection"]].insert_one(
-                    trade_formatted
-                )
-                logger.debug(f"insert_result.inserted_id: {insert_result.inserted_id}")
+                trades.append(trade_formatted)
+
+            global _db
+            insert_result = await _db[config["mongodb"]["collection"]].insert_many(trades)
+            logger.debug(f"insert_result.inserted_ids: {insert_result.inserted_ids}")
 
         elif str(stream_message.marketUpdate.orderBookUpdate):
             logger.debug("ORDERBOOK UPDATE")

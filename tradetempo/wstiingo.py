@@ -63,18 +63,28 @@ async def log_latency(websocket):
 
 
 async def message_router(message):
-    processed_nano = time.time_ns()
+    timestamp = datetime.datetime.utcnow().isoformat(),
+
+    timeseries_message = {
+        "metadata": {},
+        "timestamp": timestamp,
+        "data": {}
+    }
 
     message_type = message["messageType"]
     if message_type == "A":
         data = message["data"]
 
-        quote_data = {
+        timeseries_message['metadata'] = {
+            "messageType": message_type,
             "exchange": message["service"],
             "updateType": data[0],
+            "ticker": data[3],
+        }
+
+        timeseries_message['data'] = {
             "timestamp": data[1],
             "timestampNano": data[2],
-            "ticker": data[3],
             "bidSize": data[4],
             "bidPrice": data[5],
             "midPrice": data[6],
@@ -87,16 +97,15 @@ async def message_router(message):
             "intermarketSweepOrder": data[13],
             "oddlot": data[14],
             "nmsRule611": data[15],
-            "processedNano": processed_nano,
         }
 
         insert_result = await _db[config["mongodb"]["collection"]].insert_one(
-            quote_data
+            timeseries_message
         )
         logger.debug(f"insert_result.inserted_id: {insert_result.inserted_id}")
 
     elif message_type == "H":
-        logger.debug(f"Heartbeat @ {processed_nano}")
+        logger.debug(f"Heartbeat @ {timestamp}")
 
     elif message_type == "I":
         if "subscriptionId" in message["data"]:
@@ -104,7 +113,7 @@ async def message_router(message):
             _subscription_id = message["data"]["subscriptionId"]
         else:
             logger.warning(
-                f"Unknown data: {message['data']} in messageType=I @ {processed_nano}"
+                f"Unknown data: {message['data']} in messageType=I @ {timestamp}"
             )
 
     elif message_type == "U":

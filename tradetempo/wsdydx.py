@@ -59,37 +59,36 @@ async def log_latency(websocket):
 
 
 async def process_trade(trade_message):
-    processed_nano = time.time_ns()
+    timeseries_message = {
+        "metadata": {
+            "id": trade_message["id"],
+            "exchange": "dydx",
+            "market": "".join(trade_message["id"].lower().split("-")),
+            "type": trade_message["type"],
+            "channel": trade_message["channel"]
+        },
 
-    id = trade_message["id"]
-    exchange = "dydx"
-    market = trade_message["id"].lower()
-    currencies = trade_message["id"].split("-")
-    base_currency = currencies[0].lower()
-    quote_currency = currencies[1].lower()
+    }
 
+    trades = []
     for trade in trade_message["contents"]["trades"]:
-        trade_formatted = {
-            "processedNano": processed_nano,
-            "id": id,
-            "exchange": exchange,
-            "market": market,
+        trade_formatted = timeseries_message.copy()
+        trade_formatted["timestamp"] = datetime.datetime.utcnow().isoformat()
+        trade_formatted["data"] = {
             "timestamp": datetime.datetime.fromisoformat(
                 trade["createdAt"].rstrip("Z")
             ),
             "price": Decimal128(trade["price"]),
             "amount": Decimal128(trade["size"]),
             "side": trade["side"].lower(),
-            "base": base_currency,
-            "quote": quote_currency,
             "liquidation": trade["liquidation"],
         }
 
-        global _db
-        insert_result = await _db[config["mongodb"]["collection"]].insert_one(
-            trade_formatted
-        )
-        logger.debug(f"insert_result.inserted_id: {insert_result.inserted_id}")
+        trades.append(trade_formatted)
+
+    global _db
+    insert_result = await _db[config["mongodb"]["collection"]].insert_many(trades)
+    logger.debug(f"insert_result.inserted_ids: {insert_result.inserted_ids}")
 
 
 async def consumer_handler(websocket: websockets.WebSocketClientProtocol):
