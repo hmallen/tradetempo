@@ -13,6 +13,7 @@ import websockets
 from bson import Decimal128
 from dydx3.constants import WS_HOST_MAINNET
 from motor.motor_asyncio import AsyncIOMotorClient
+from pymongo.errors import CollectionInvalid
 
 from pathlib import Path
 
@@ -44,6 +45,9 @@ config_path = "settings.cfg"
 config = configparser.RawConfigParser()
 config.read(config_path)
 
+trades_collection = config["mongodb"]["wsdydx_collection"]
+latency_collection = config["mongodb"]["latency_collection"]
+
 _db = None
 
 
@@ -53,7 +57,15 @@ async def log_latency(websocket):
         pong_waiter = await websocket.ping()
         await pong_waiter
         t1 = time.perf_counter()
-        logger.info("Connection latency: %.3f seconds", t1 - t0)
+        latency = t1 - t0
+        logger.debug("Connection latency: %.3f seconds", latency)
+        await _db[latency_collection].insert_one(
+            {
+                "timestamp": datetime.datetime.utcnow(),
+                "source": Path(__file__),
+                "latency": latency,
+            }
+        )
 
         await asyncio.sleep(int(config["logging"]["log_latency_interval"]))
 
@@ -65,9 +77,8 @@ async def process_trade(trade_message):
             "exchange": "dydx",
             "market": "".join(trade_message["id"].lower().split("-")),
             "type": trade_message["type"],
-            "channel": trade_message["channel"]
+            "channel": trade_message["channel"],
         },
-
     }
 
     trades = []
@@ -87,7 +98,7 @@ async def process_trade(trade_message):
         trades.append(trade_formatted)
 
     global _db
-    insert_result = await _db[config["mongodb"]["collection"]].insert_many(trades)
+    insert_result = await _db[trades_collection].insert_many(trades)
     logger.debug(f"insert_result.inserted_ids: {insert_result.inserted_ids}")
 
 
@@ -99,6 +110,19 @@ async def consumer_handler(websocket: websockets.WebSocketClientProtocol):
         directConnection=True,
         retryWrites=False,
     )[config["mongodb"]["db"]]
+
+    try:
+        await _db.create_collection(
+            "timeseries-dydx",
+            timeseries={
+                "timeField": "timestamp",
+                "metaField": "metadata",
+                "granularity": "seconds",
+            },
+        )
+        logger.info("Created new timeseries collection.")
+    except CollectionInvalid:
+        logger.info("Found existing timeseries collection.")
 
     async for message in websocket:
         trade_json = json.loads(message)

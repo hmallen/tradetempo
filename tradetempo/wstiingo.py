@@ -13,6 +13,7 @@ import simplejson as json
 import websockets
 from bson import Decimal128, Int64
 from motor.motor_asyncio import AsyncIOMotorClient
+from pymongo.errors import CollectionInvalid
 
 from pathlib import Path
 
@@ -47,6 +48,9 @@ tiingo_key = config["tiingo"]["api_key"]
 config.read("settings.cfg")
 # config.read("../settings.cfg")
 
+trades_collection = config["mongodb"]["wscwatch_collection"]
+latency_collection = config["mongodb"]["latency_collection"]
+
 _db = None
 subscription_id = None
 
@@ -57,32 +61,36 @@ async def log_latency(websocket):
         pong_waiter = await websocket.ping()
         await pong_waiter
         t1 = time.perf_counter()
-        logger.info("Connection latency: %.3f seconds", t1 - t0)
+        latency = t1 - t0
+        logger.debug("Connection latency: %.3f seconds", latency)
+        _db[latency_collection].insert_one(
+            {
+                "timestamp": datetime.datetime.utcnow(),
+                "source": Path(__file__),
+                "latency": latency,
+            }
+        )
 
         await asyncio.sleep(int(config["logging"]["log_latency_interval"]))
 
 
 async def message_router(message):
-    timestamp = datetime.datetime.utcnow().isoformat(),
+    timestamp = (datetime.datetime.utcnow().isoformat(),)
 
-    timeseries_message = {
-        "metadata": {},
-        "timestamp": timestamp,
-        "data": {}
-    }
+    timeseries_message = {"metadata": {}, "timestamp": timestamp, "data": {}}
 
     message_type = message["messageType"]
     if message_type == "A":
         data = message["data"]
 
-        timeseries_message['metadata'] = {
+        timeseries_message["metadata"] = {
             "messageType": message_type,
             "exchange": message["service"],
             "updateType": data[0],
             "ticker": data[3],
         }
 
-        timeseries_message['data'] = {
+        timeseries_message["data"] = {
             "timestamp": data[1],
             "timestampNano": data[2],
             "bidSize": data[4],
@@ -99,9 +107,7 @@ async def message_router(message):
             "nmsRule611": data[15],
         }
 
-        insert_result = await _db[config["mongodb"]["collection"]].insert_one(
-            timeseries_message
-        )
+        insert_result = await _db[trades_collection].insert_one(timeseries_message)
         logger.debug(f"insert_result.inserted_id: {insert_result.inserted_id}")
 
     elif message_type == "H":
@@ -134,6 +140,19 @@ async def consumer_handler(websocket: websockets.WebSocketClientProtocol):
         directConnection=True,
         retryWrites=False,
     )[config["mongodb"]["db"]]
+
+    try:
+        await _db.create_collection(
+            "timeseries-tiingo",
+            timeseries={
+                "timeField": "timestamp",
+                "metaField": "metadata",
+                "granularity": "seconds",
+            },
+        )
+        logger.info("Created new timeseries collection.")
+    except CollectionInvalid:
+        logger.info("Found existing timeseries collection.")
 
     async for message in websocket:
         await message_router(message=json.loads(message))

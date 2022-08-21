@@ -34,11 +34,7 @@ cwatch_coll = config["mongodb"]["cryptowatch_collection"]
 
 
 class SupplementData:
-    def __init__(
-        self,
-        db,
-        collection
-    ):
+    def __init__(self, db, collection):
         self.db = MongoClient(
             host=config["mongodb"]["host"],
             port=int(config["mongodb"]["port"]),
@@ -49,9 +45,7 @@ class SupplementData:
         self.collection = collection
 
         logger.info("Updating exchange reference.")
-        exchanges = requests.get("https://api.cryptowat.ch/exchanges").json()[
-            "result"
-        ]
+        exchanges = requests.get("https://api.cryptowat.ch/exchanges").json()["result"]
 
         bulk_ops = []
         for exchange in exchanges:
@@ -62,9 +56,7 @@ class SupplementData:
                     upsert=True,
                 )
             )
-        logger.debug(
-            f"Beginning bulk exchange update of {len(bulk_ops)} operations."
-        )
+        logger.debug(f"Beginning bulk exchange update of {len(bulk_ops)} operations.")
         bulk_result = self.db[cwatch_coll].bulk_write(bulk_ops)
         logger.info(
             f"New Exchanges: {bulk_result.inserted_count} / Updated Exchanges: {bulk_result.modified_count}"
@@ -87,7 +79,7 @@ class SupplementData:
         logger.info(
             f"New Markets: {bulk_result.inserted_count} / Updated Markets: {bulk_result.modified_count}"
         )
-        
+
         logger.info("Updating pair reference.")
         pairs = requests.get("https://api.cryptowat.ch/pairs").json()["result"]
 
@@ -132,7 +124,6 @@ class SupplementData:
         logger.debug(f"db_currencyPairId: {db_currencyPairId}")
         for id in db_currencyPairId:
             self.add_reference(type="pair", id=id)
-    
 
     def add_reference(self, type, id):
         ref_doc = self.db[cwatch_coll].find_one({"type": type, "id": int(id)})
@@ -180,10 +171,8 @@ class SupplementData:
                         {"_id": ref_doc["_id"]}, {"$set": ref_doc}
                     )
                     if update_result.modified_count > 0:
-                        logger.debug(
-                            f"Updated reference for market {ref_doc['id']}."
-                        )
-            
+                        logger.debug(f"Updated reference for market {ref_doc['id']}.")
+
             else:
                 logger.warning(f"Market ID {id} not found. Skipping.")
 
