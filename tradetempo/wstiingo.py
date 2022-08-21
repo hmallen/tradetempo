@@ -48,7 +48,7 @@ tiingo_key = config["tiingo"]["api_key"]
 config.read("settings.cfg")
 # config.read("../settings.cfg")
 
-trades_collection = config["mongodb"]["tiingo_collection"]
+trades_collection = config["mongodb"]["wstiingo_collection"]
 latency_collection = config["mongodb"]["latency_collection"]
 
 _db = None
