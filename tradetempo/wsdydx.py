@@ -113,7 +113,7 @@ async def consumer_handler(websocket: websockets.WebSocketClientProtocol):
 
     try:
         await _db.create_collection(
-            "timeseries-dydx",
+            trades_collection,
             timeseries={
                 "timeField": "timestamp",
                 "metaField": "metadata",

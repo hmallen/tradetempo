@@ -48,7 +48,7 @@ tiingo_key = config["tiingo"]["api_key"]
 config.read("settings.cfg")
 # config.read("../settings.cfg")
 
-trades_collection = config["mongodb"]["wscwatch_collection"]
+trades_collection = config["mongodb"]["tiingo_collection"]
 latency_collection = config["mongodb"]["latency_collection"]
 
 _db = None
@@ -143,7 +143,7 @@ async def consumer_handler(websocket: websockets.WebSocketClientProtocol):
 
     try:
         await _db.create_collection(
-            "timeseries-tiingo",
+            trades_collection,
             timeseries={
                 "timeField": "timestamp",
                 "metaField": "metadata",
