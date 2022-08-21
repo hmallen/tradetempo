@@ -62,7 +62,7 @@ async def log_latency(websocket):
         await _db[latency_collection].insert_one(
             {
                 "timestamp": datetime.datetime.utcnow(),
-                "source": Path(__file__),
+                "source": f"{Path(__file__)}",
                 "latency": latency,
             }
         )
