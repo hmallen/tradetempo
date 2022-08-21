@@ -75,7 +75,7 @@ async def log_latency(websocket):
 
 
 async def message_router(message):
-    timestamp = (datetime.datetime.utcnow().isoformat(),)
+    timestamp = datetime.datetime.utcnow().isoformat()
 
     timeseries_message = {"metadata": {}, "timestamp": timestamp, "data": {}}
 

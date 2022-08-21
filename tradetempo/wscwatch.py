@@ -113,7 +113,7 @@ async def message_router(message):
             trades = []
             for trade in trades_update["marketUpdate"]["tradesUpdate"]["trades"]:
                 trade_formatted = timeseries_message.copy()
-                trade_formatted["timestamp"] = datetime.datetime.utcnow().isoformat()
+                trade_formatted["timestamp"] = datetime.datetime.utcnow()
                 trade_formatted["data"] = {
                     "side": trade["orderSide"].rstrip("SIDE").lower(),
                     "price": Decimal128(trade["priceStr"]),

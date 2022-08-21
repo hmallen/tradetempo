@@ -84,7 +84,7 @@ async def process_trade(trade_message):
     trades = []
     for trade in trade_message["contents"]["trades"]:
         trade_formatted = timeseries_message.copy()
-        trade_formatted["timestamp"] = datetime.datetime.utcnow().isoformat()
+        trade_formatted["timestamp"] = datetime.datetime.utcnow()
         trade_formatted["data"] = {
             "timestamp": datetime.datetime.fromisoformat(
                 trade["createdAt"].rstrip("Z")
