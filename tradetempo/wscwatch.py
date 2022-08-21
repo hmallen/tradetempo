@@ -104,7 +104,9 @@ async def message_router(message):
                     "currencyPairId": trades_update["marketUpdate"]["market"][
                         "currencyPairId"
                     ],
-                    "externalId": trade["externalId"],
+                    "externalId": trades_update["marketUpdate"]["tradesUpdate"][
+                        "trades"
+                    ][0]["externalId"],
                 }
             }
 
